@@ -1,0 +1,79 @@
+<mxfile host="app.diagrams.net" modified="2026-02-25T10:05:00.000Z" agent="Mozilla/5.0" version="21.6.0" type="device">
+  <diagram id="flood-state-diagram" name="Stavovy diagram">
+    <mxGraphModel dx="1100" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="800" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="tile-title" value="Stavovy diagram dlazdice (TileState)" style="text;html=0;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="60" y="30" width="340" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="tile-init" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="190" y="80" width="20" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="tile-notflooded" value="NOT_FLOODED" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="130" y="140" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="tile-flooded" value="FLOODED" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="130" y="280" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="tile-init-edge" value="" style="endArrow=block;endFill=1;html=1;" edge="1" parent="1" source="tile-init" target="tile-notflooded">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="tile-transition" value="flood(color)&#xa;[susedi so zaplavenou oblastou&#xa;a ma rovnaku farbu]" style="endArrow=block;endFill=1;html=0;align=left;verticalAlign=middle;" edge="1" parent="1" source="tile-notflooded" target="tile-flooded">
+          <mxGeometry x="0.1" y="10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="game-title" value="Stavovy diagram hry (GameState)" style="text;html=0;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="700" y="30" width="300" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="game-init" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="830" y="80" width="20" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="game-playing" value="PLAYING" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="770" y="140" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="game-solved" value="SOLVED" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="660" y="300" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="game-failed" value="FAILED" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="880" y="300" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="game-init-edge" value="" style="endArrow=block;endFill=1;html=1;" edge="1" parent="1" source="game-init" target="game-playing">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="game-self" value="flood(color)&#xa;[!isSolved() &amp;&amp;&#xa;moveCount &lt; maxMoves]" style="endArrow=block;endFill=1;html=0;rounded=1;align=left;" edge="1" parent="1" source="game-playing" target="game-playing">
+          <mxGeometry x="-0.3" y="-15" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="960" y="140" />
+              <mxPoint x="960" y="170" />
+            </Array>
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="game-to-solved" value="flood(color)&#xa;[isSolved() == true]" style="endArrow=block;endFill=1;html=0;align=right;" edge="1" parent="1" source="game-playing" target="game-solved">
+          <mxGeometry x="-0.1" y="-10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="game-to-failed" value="flood(color)&#xa;[moveCount &gt;= maxMoves&#xa;&amp;&amp; !isSolved()]" style="endArrow=block;endFill=1;html=0;align=left;" edge="1" parent="1" source="game-playing" target="game-failed">
+          <mxGeometry x="0.1" y="10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="final-solved" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="720" y="380" width="20" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="final-failed" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="940" y="380" width="20" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="solved-to-final" value="" style="endArrow=block;endFill=1;html=1;" edge="1" parent="1" source="game-solved" target="final-solved">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="failed-to-final" value="" style="endArrow=block;endFill=1;html=1;" edge="1" parent="1" source="game-failed" target="final-failed">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
