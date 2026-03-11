@@ -18,6 +18,16 @@ public class ConsoleUI {
     private static final Pattern INPUT_PATTERN =
             Pattern.compile("[RBGYPOX]", Pattern.CASE_INSENSITIVE);
 
+    // ANSI background colors + reset
+    private static final String RESET  = "\033[0m";
+    private static final String BOLD   = "\033[1m";
+    private static final String BG_RED    = "\033[41m";
+    private static final String BG_BLUE   = "\033[44m";
+    private static final String BG_GREEN  = "\033[42m";
+    private static final String BG_YELLOW = "\033[43m";
+    private static final String BG_PURPLE = "\033[45m";
+    private static final String BG_ORANGE = "\033[48;5;208m";
+
     public void play(Field field) {
         this.field = field;
         this.field.generate();
@@ -47,18 +57,31 @@ public class ConsoleUI {
     public void show() {
         System.out.print("   ");
         for (int c = 0; c < field.getCols(); c++) {
-            System.out.printf("%2d", c + 1);
+            System.out.printf("%3d", c + 1);
         }
         System.out.println();
         for (int r = 0; r < field.getRows(); r++) {
             System.out.printf("%2d ", r + 1);
             for (int c = 0; c < field.getCols(); c++) {
                 Tile tile = field.getTile(r, c);
-                System.out.print(" " + colorToChar(tile.getColor()));
+                String bg = colorToBg(tile.getColor());
+                char ch = colorToChar(tile.getColor());
+                System.out.print(bg + BOLD + " " + ch + " " + RESET);
             }
             System.out.println();
         }
         System.out.println();
+    }
+
+    private String colorToBg(TileColor color) {
+        return switch (color) {
+            case RED    -> BG_RED;
+            case BLUE   -> BG_BLUE;
+            case GREEN  -> BG_GREEN;
+            case YELLOW -> BG_YELLOW;
+            case PURPLE -> BG_PURPLE;
+            case ORANGE -> BG_ORANGE;
+        };
     }
 
     private char colorToChar(TileColor color) {
@@ -72,10 +95,20 @@ public class ConsoleUI {
         };
     }
 
+    private void printLegend() {
+        System.out.print("Farby: ");
+        TileColor[] colors = TileColor.values();
+        for (TileColor c : colors) {
+            System.out.print(colorToBg(c) + BOLD + " " + colorToChar(c) + " " + RESET + " ");
+        }
+        System.out.println();
+    }
+
     public void handleInput() {
         String input;
         Matcher matcher;
         do {
+            printLegend();
             System.out.print("Zvolte farbu (R/B/G/Y/P/O) alebo X pre ukoncenie: ");
             input = scanner.nextLine().trim();
             matcher = INPUT_PATTERN.matcher(input);
