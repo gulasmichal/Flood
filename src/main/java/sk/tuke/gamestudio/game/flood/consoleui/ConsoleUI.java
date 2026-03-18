@@ -1,24 +1,36 @@
 package sk.tuke.gamestudio.game.flood.consoleui;
 
+import sk.tuke.gamestudio.entity.Comment;
+import sk.tuke.gamestudio.entity.Rating;
+import sk.tuke.gamestudio.entity.Score;
 import sk.tuke.gamestudio.game.flood.core.Field;
 import sk.tuke.gamestudio.game.flood.core.GameState;
 import sk.tuke.gamestudio.game.flood.core.Tile;
 import sk.tuke.gamestudio.game.flood.core.TileColor;
+import sk.tuke.gamestudio.service.CommentService;
+import sk.tuke.gamestudio.service.RatingService;
+import sk.tuke.gamestudio.service.ScoreService;
 
+import java.util.Date;
+import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ConsoleUI {
+    private static final String GAME_NAME = "flood";
 
     private Field field;
+    private String playerName;
     private final Scanner scanner = new Scanner(System.in);
 
-    // A.1: case-insensitive, also accepts X/x for exit
+    private final ScoreService scoreService;
+    private final CommentService commentService;
+    private final RatingService ratingService;
+
     private static final Pattern INPUT_PATTERN =
             Pattern.compile("[RBGYPOX]", Pattern.CASE_INSENSITIVE);
 
-    // ANSI background colors + reset
     private static final String RESET  = "\033[0m";
     private static final String BOLD   = "\033[1m";
     private static final String BG_RED    = "\033[41m";
@@ -28,8 +40,23 @@ public class ConsoleUI {
     private static final String BG_PURPLE = "\033[45m";
     private static final String BG_ORANGE = "\033[48;5;208m";
 
+    public ConsoleUI(ScoreService scoreService, CommentService commentService, RatingService ratingService) {
+        this.scoreService = scoreService;
+        this.commentService = commentService;
+        this.ratingService = ratingService;
+    }
+
     public void play(Field field) {
         this.field = field;
+
+        if (playerName == null) {
+            System.out.print("Zadajte svoje meno: ");
+            playerName = scanner.nextLine().trim();
+            if (playerName.isEmpty()) {
+                playerName = "Anonym";
+            }
+        }
+
         this.field.generate();
 
         do {
@@ -42,15 +69,112 @@ public class ConsoleUI {
 
         if (field.getGameState() == GameState.SOLVED) {
             System.out.println("Gratulujeme, vyhrali ste!");
+            int points = field.getMaxMoves() - field.getMoveCount();
+            saveScore(points);
         } else if (field.getGameState() == GameState.FAILED) {
             System.out.println("Prehra! Minuli ste vsetky tahy.");
         }
 
-        // A.2: offer new game
+        showTopScores();
+        showAverageRating();
+        promptComment();
+        promptRating();
+
         System.out.print("Prajete si zacat novu hru (A/N)? ");
         String answer = scanner.nextLine().trim().toUpperCase();
         if (answer.equals("A")) {
             play(new Field());
+        }
+    }
+
+    private void saveScore(int points) {
+        try {
+            scoreService.addScore(new Score(GAME_NAME, playerName, points, new Date()));
+            System.out.println("Skore ulozene: " + points + " bodov.");
+        } catch (Exception e) {
+            System.out.println("Nepodarilo sa ulozit skore: " + e.getMessage());
+        }
+    }
+
+    private void showTopScores() {
+        try {
+            List<Score> scores = scoreService.getTopScores(GAME_NAME);
+            if (scores.isEmpty()) {
+                System.out.println("Zatial ziadne skore.");
+                return;
+            }
+            System.out.println("\n--- TOP 10 SKORE ---");
+            int rank = 1;
+            for (Score s : scores) {
+                System.out.printf("%2d. %-20s %4d bodov  (%s)%n", rank++, s.getPlayer(), s.getPoints(), s.getPlayedOn());
+            }
+            System.out.println("--------------------");
+        } catch (Exception e) {
+            System.out.println("Nepodarilo sa nacitat skore: " + e.getMessage());
+        }
+    }
+
+    private void showAverageRating() {
+        try {
+            int avg = ratingService.getAverageRating(GAME_NAME);
+            if (avg == 0) {
+                System.out.println("Hra este nebola hodnotena.");
+            } else {
+                System.out.printf("Priemerne hodnotenie hry: %d/5 hviezdicky%n", avg);
+            }
+        } catch (Exception e) {
+            System.out.println("Nepodarilo sa nacitat hodnotenie: " + e.getMessage());
+        }
+    }
+
+    private void promptComment() {
+        System.out.print("Chcete pridat komentar? (A/N): ");
+        String answer = scanner.nextLine().trim().toUpperCase();
+        if (!answer.equals("A")) return;
+
+        System.out.print("Vas komentar: ");
+        String content = scanner.nextLine().trim();
+        if (content.isEmpty()) return;
+
+        try {
+            commentService.addComment(new Comment(GAME_NAME, playerName, content, new Date()));
+            System.out.println("Komentar ulozeny.");
+
+            List<Comment> comments = commentService.getComments(GAME_NAME);
+            System.out.println("\n--- KOMENTARE ---");
+            for (Comment c : comments) {
+                System.out.printf("[%s] %s: %s%n", c.getCommentedOn(), c.getPlayer(), c.getContent());
+            }
+            System.out.println("-----------------");
+        } catch (Exception e) {
+            System.out.println("Nepodarilo sa ulozit komentar: " + e.getMessage());
+        }
+    }
+
+    private void promptRating() {
+        System.out.print("Chcete ohodnotit hru (1-5 hviezdicky)? (A/N): ");
+        String answer = scanner.nextLine().trim().toUpperCase();
+        if (!answer.equals("A")) return;
+
+        int stars = 0;
+        while (stars < 1 || stars > 5) {
+            System.out.print("Zadajte hodnotenie (1-5): ");
+            String input = scanner.nextLine().trim();
+            try {
+                stars = Integer.parseInt(input);
+                if (stars < 1 || stars > 5) {
+                    System.out.println("Hodnotenie musi byt medzi 1 a 5.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Neplatny vstup.");
+            }
+        }
+
+        try {
+            ratingService.setRating(new Rating(GAME_NAME, playerName, stars, new Date()));
+            System.out.println("Hodnotenie ulozene.");
+        } catch (Exception e) {
+            System.out.println("Nepodarilo sa ulozit hodnotenie: " + e.getMessage());
         }
     }
 
