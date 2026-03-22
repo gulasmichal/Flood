@@ -308,13 +308,3 @@ Zvoľte farbu (R/B/G/Y/P/O):
 ```
 
 ---
-
-## Zhrnutie
-
-| Krok | Výstup                            | Stav   |
-|------|-----------------------------------|--------|
-| 1    | GitLab repozitár                  | ✅      |
-| 2    | Diagram tried + štruktúra balíkov | ✅      |
-| 3    | Stavový diagram                   | ✅      |
-| 4    | Opis logiky hry                   | ✅      |
-| 5    | Nahrať do repozitára              | ⬜      |
