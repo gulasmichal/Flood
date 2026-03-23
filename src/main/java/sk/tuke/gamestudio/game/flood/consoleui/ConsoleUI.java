@@ -22,6 +22,7 @@ public class ConsoleUI {
 
     private Field field;
     private String playerName;
+    private String difficultyName;
     private final Scanner scanner = new Scanner(System.in);
 
     private final ScoreService scoreService;
@@ -29,7 +30,7 @@ public class ConsoleUI {
     private final RatingService ratingService;
 
     private static final Pattern INPUT_PATTERN =
-            Pattern.compile("[RBGYPOX]", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("[RBGYPOX?]", Pattern.CASE_INSENSITIVE);
 
     private static final String RESET  = "\033[0m";
     private static final String BOLD   = "\033[1m";
@@ -46,8 +47,24 @@ public class ConsoleUI {
         this.ratingService = ratingService;
     }
 
-    public void play(Field field) {
-        this.field = field;
+    private Field selectDifficulty() {
+        System.out.println("\nZvolte narocnost:");
+        System.out.println("  1. Jednoducha  ( 6x6,  20 tahov)");
+        System.out.println("  2. Stredna     ( 8x8,  25 tahov)");
+        System.out.println("  3. Tazka       (12x12, 30 tahov)");
+        while (true) {
+            System.out.print("Vasa volba (1-3): ");
+            switch (scanner.nextLine().trim()) {
+                case "1": difficultyName = "Jednoducha";  return new Field(6,  6,  20);
+                case "2": difficultyName = "Stredna";     return new Field(8,  8,  25);
+                case "3": difficultyName = "Tazka";       return new Field(12, 12, 30);
+                default:  System.out.println("Neplatna volba. Zadajte 1, 2 alebo 3.");
+            }
+        }
+    }
+
+    public void play() {
+        this.field = selectDifficulty();
 
         if (playerName == null) {
             System.out.print("Zadajte svoje meno: ");
@@ -57,21 +74,23 @@ public class ConsoleUI {
             }
         }
 
+        System.out.printf("%nHrac: %s  |  Narocnost: %s%n%n", playerName, difficultyName);
         this.field.generate();
 
         do {
             show();
-            System.out.printf("Tah: %d/%d%n", field.getMoveCount(), field.getMaxMoves());
+            showProgress();
+            System.out.printf("Tah: %d/%d%n", this.field.getMoveCount(), this.field.getMaxMoves());
             handleInput();
-        } while (field.getGameState() == GameState.PLAYING);
+        } while (this.field.getGameState() == GameState.PLAYING);
 
         show();
 
-        if (field.getGameState() == GameState.SOLVED) {
+        if (this.field.getGameState() == GameState.SOLVED) {
             System.out.println("Gratulujeme, vyhrali ste!");
-            int points = field.getMaxMoves() - field.getMoveCount();
+            int points = this.field.getMaxMoves() - this.field.getMoveCount();
             saveScore(points);
-        } else if (field.getGameState() == GameState.FAILED) {
+        } else if (this.field.getGameState() == GameState.FAILED) {
             System.out.println("Prehra! Minuli ste vsetky tahy.");
         }
 
@@ -83,13 +102,17 @@ public class ConsoleUI {
         System.out.print("Prajete si zacat novu hru (A/N)? ");
         String answer = scanner.nextLine().trim().toUpperCase();
         if (answer.equals("A")) {
-            play(new Field());
+            play();
         }
+    }
+
+    private String scoreGameName() {
+        return GAME_NAME + "-" + difficultyName.toLowerCase();
     }
 
     private void saveScore(int points) {
         try {
-            scoreService.addScore(new Score(GAME_NAME, playerName, points, new Date()));
+            scoreService.addScore(new Score(scoreGameName(), playerName, points, new Date()));
             System.out.println("Skore ulozene: " + points + " bodov.");
         } catch (Exception e) {
             System.out.println("Nepodarilo sa ulozit skore: " + e.getMessage());
@@ -98,17 +121,17 @@ public class ConsoleUI {
 
     private void showTopScores() {
         try {
-            List<Score> scores = scoreService.getTopScores(GAME_NAME);
+            List<Score> scores = scoreService.getTopScores(scoreGameName());
             if (scores.isEmpty()) {
                 System.out.println("Zatial ziadne skore.");
                 return;
             }
-            System.out.println("\n--- TOP 10 SKORE ---");
+            System.out.println("\n--- TOP 10 SKORE [" + difficultyName + "] ---");
             int rank = 1;
             for (Score s : scores) {
                 System.out.printf("%2d. %-20s %4d bodov  (%s)%n", rank++, s.getPlayer(), s.getPoints(), s.getPlayedOn());
             }
-            System.out.println("--------------------");
+            System.out.println("----------------------------------");
         } catch (Exception e) {
             System.out.println("Nepodarilo sa nacitat skore: " + e.getMessage());
         }
@@ -233,13 +256,15 @@ public class ConsoleUI {
         Matcher matcher;
         do {
             printLegend();
-            System.out.print("Zvolte farbu (R/B/G/Y/P/O) alebo X pre ukoncenie: ");
+            System.out.print("Zvolte farbu (R/B/G/Y/P/O), ? napoveda, X ukoncenie: ");
             input = scanner.nextLine().trim();
             matcher = INPUT_PATTERN.matcher(input);
             if (!matcher.matches()) {
-                System.out.println("Neplatny vstup. Zadajte R, B, G, Y, P, O alebo X.");
+                System.out.println("Neplatny vstup. Zadajte R, B, G, Y, P, O, ? alebo X.");
+            } else if (input.equals("?")) {
+                showHint();
             }
-        } while (!matcher.matches());
+        } while (!matcher.matches() || input.equals("?"));
 
         if (input.equalsIgnoreCase("X")) {
             System.out.println("Koniec hry.");
@@ -258,6 +283,25 @@ public class ConsoleUI {
 
         if (color != null) {
             field.flood(color);
+        }
+    }
+
+    private void showProgress() {
+        int total = field.getRows() * field.getCols();
+        int flooded = field.getFloodedCount();
+        int barWidth = 20;
+        int filled = (int) Math.round((double) flooded / total * barWidth);
+        StringBuilder bar = new StringBuilder("[");
+        for (int i = 0; i < barWidth; i++) bar.append(i < filled ? '█' : '░');
+        bar.append("]");
+        System.out.printf("Zaplavene: %s %d%% (%d/%d)%n", bar, flooded * 100 / total, flooded, total);
+    }
+
+    private void showHint() {
+        TileColor hint = field.getBestHintColor();
+        if (hint != null) {
+            System.out.printf("Napoveda: zvolte %s%s %c %s%n",
+                    colorToBg(hint), BOLD, colorToChar(hint), RESET);
         }
     }
 }

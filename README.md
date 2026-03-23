@@ -1,3 +1,11 @@
+# Flood It – GameStudio
+
+## Video ukážka hry
+
+[Pozri na YouTube](https://www.youtube.com/watch?v=nVuR3AM56sg)
+
+---
+
 # GameStudio Readme (SK)
 
 Toto je šablóna projektu GameStudio. Naklonujte si tento projekt a otvorte ho v IntelliJ Idea podľa nižšie uvedeného návodu.

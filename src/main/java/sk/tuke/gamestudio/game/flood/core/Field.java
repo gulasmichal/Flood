@@ -1,6 +1,8 @@
 package sk.tuke.gamestudio.game.flood.core;
 
+import java.util.EnumMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 
 public class Field {
@@ -160,5 +162,34 @@ public class Field {
 
     public GameState getGameState() {
         return gameState;
+    }
+
+    public int getFloodedCount() {
+        int count = 0;
+        for (int r = 0; r < rows; r++)
+            for (int c = 0; c < cols; c++)
+                if (tiles[r][c].getState() == TileState.FLOODED) count++;
+        return count;
+    }
+
+    public TileColor getBestHintColor() {
+        Map<TileColor, Integer> counts = new EnumMap<>(TileColor.class);
+        int[][] directions = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                if (tiles[r][c].getState() == TileState.FLOODED) {
+                    for (int[] dir : directions) {
+                        int nr = r + dir[0], nc = c + dir[1];
+                        if (isValid(nr, nc) && tiles[nr][nc].getState() == TileState.NOT_FLOODED) {
+                            counts.merge(tiles[nr][nc].getColor(), 1, Integer::sum);
+                        }
+                    }
+                }
+            }
+        }
+        return counts.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse(null);
     }
 }

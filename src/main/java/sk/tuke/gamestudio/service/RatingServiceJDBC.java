@@ -6,7 +6,7 @@ import java.sql.*;
 
 public class RatingServiceJDBC implements RatingService {
     public static final String URL = "jdbc:postgresql://localhost/gamestudio";
-    public static final String USER = "postgres";
+    public static final String USER = "michalgulas";
     public static final String PASSWORD = "postgres";
 
     private static final String DELETE_ONE = "DELETE FROM rating WHERE game = ? AND player = ?";
