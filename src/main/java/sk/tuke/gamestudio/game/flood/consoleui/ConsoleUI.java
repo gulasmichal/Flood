@@ -29,8 +29,10 @@ public class ConsoleUI {
     private final CommentService commentService;
     private final RatingService ratingService;
 
-    private static final Pattern INPUT_PATTERN =
-            Pattern.compile("[RBGYPOX?]", Pattern.CASE_INSENSITIVE);
+    private static final Pattern COORD_PATTERN =
+            Pattern.compile("(\\d+)[,\\s]+(\\d+)");
+    private static final Pattern SPECIAL_PATTERN =
+            Pattern.compile("[X?]", Pattern.CASE_INSENSITIVE);
 
     private static final String RESET  = "\033[0m";
     private static final String BOLD   = "\033[1m";
@@ -252,37 +254,45 @@ public class ConsoleUI {
     }
 
     public void handleInput() {
-        String input;
-        Matcher matcher;
-        do {
+        while (true) {
             printLegend();
-            System.out.print("Zvolte farbu (R/B/G/Y/P/O), ? napoveda, X ukoncenie: ");
-            input = scanner.nextLine().trim();
-            matcher = INPUT_PATTERN.matcher(input);
-            if (!matcher.matches()) {
-                System.out.println("Neplatny vstup. Zadajte R, B, G, Y, P, O, ? alebo X.");
-            } else if (input.equals("?")) {
-                showHint();
+            System.out.printf("Zadajte suradnice (riadok stlpec), ? napoveda, X ukoncenie [1-%d, 1-%d]: ",
+                    field.getRows(), field.getCols());
+            String input = scanner.nextLine().trim();
+
+            if (input.equalsIgnoreCase("X")) {
+                System.out.println("Koniec hry.");
+                System.exit(0);
             }
-        } while (!matcher.matches() || input.equals("?"));
 
-        if (input.equalsIgnoreCase("X")) {
-            System.out.println("Koniec hry.");
-            System.exit(0);
-        }
+            if (input.equals("?")) {
+                showHint();
+                continue;
+            }
 
-        TileColor color = switch (input.toUpperCase()) {
-            case "R" -> TileColor.RED;
-            case "B" -> TileColor.BLUE;
-            case "G" -> TileColor.GREEN;
-            case "Y" -> TileColor.YELLOW;
-            case "P" -> TileColor.PURPLE;
-            case "O" -> TileColor.ORANGE;
-            default  -> null;
-        };
+            Matcher m = COORD_PATTERN.matcher(input);
+            if (!m.matches()) {
+                System.out.println("Neplatny vstup. Zadajte riadok a stlpec (napr. '3 4'), ? alebo X.");
+                continue;
+            }
 
-        if (color != null) {
+            int row = Integer.parseInt(m.group(1)) - 1;
+            int col = Integer.parseInt(m.group(2)) - 1;
+
+            if (row < 0 || row >= field.getRows() || col < 0 || col >= field.getCols()) {
+                System.out.printf("Suradnice mimo rozsahu. Zadajte riadok 1-%d a stlpec 1-%d.%n",
+                        field.getRows(), field.getCols());
+                continue;
+            }
+
+            TileColor color = field.getTile(row, col).getColor();
+            if (color == field.getTile(0, 0).getColor()) {
+                System.out.println("Tato farba uz je aktivna. Zvolte inu dlazdicu.");
+                continue;
+            }
+
             field.flood(color);
+            break;
         }
     }
 
