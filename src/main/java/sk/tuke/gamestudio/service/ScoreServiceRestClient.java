@@ -25,6 +25,11 @@ public class ScoreServiceRestClient implements ScoreService {
     }
 
     @Override
+    public List<Score> getAllScores() {
+        return Arrays.asList(restTemplate.getForEntity(url, Score[].class).getBody());
+    }
+
+    @Override
     public void reset() {
         throw new UnsupportedOperationException("Not supported via web service");
     }

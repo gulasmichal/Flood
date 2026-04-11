@@ -9,6 +9,8 @@ import java.util.Date;
 @NamedQueries({
         @NamedQuery(name = "Score.getTopScores",
                 query = "SELECT s FROM Score s WHERE s.game=:game ORDER BY s.points DESC"),
+        @NamedQuery(name = "Score.getAllScores",
+                query = "SELECT s FROM Score s ORDER BY s.points DESC"),
         @NamedQuery(name = "Score.resetScores",
                 query = "DELETE FROM Score s")
 })
@@ -16,6 +18,7 @@ public class Score implements Serializable {
 
     @Id
     @GeneratedValue
+    @Column(name = "id")
     private int ident;
 
     private String game;

@@ -14,6 +14,11 @@ public class ScoreServiceRest {
     @Autowired
     private ScoreService scoreService;
 
+    @GetMapping
+    public List<Score> getAllScores() {
+        return scoreService.getAllScores();
+    }
+
     @GetMapping("/{game}")
     public List<Score> getTopScores(@PathVariable String game) {
         return scoreService.getTopScores(game);

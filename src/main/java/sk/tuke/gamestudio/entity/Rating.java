@@ -20,6 +20,7 @@ public class Rating implements Serializable {
 
     @Id
     @GeneratedValue
+    @Column(name = "id")
     private int ident;
 
     private String game;

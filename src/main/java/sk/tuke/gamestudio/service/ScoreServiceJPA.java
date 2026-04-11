@@ -27,6 +27,11 @@ public class ScoreServiceJPA implements ScoreService {
     }
 
     @Override
+    public List<Score> getAllScores() {
+        return entityManager.createNamedQuery("Score.getAllScores", Score.class).getResultList();
+    }
+
+    @Override
     public void reset() {
         entityManager.createNamedQuery("Score.resetScores").executeUpdate();
     }

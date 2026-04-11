@@ -1,0 +1,60 @@
+### Získaj všetky skóre
+GET http://localhost:8080/api/score
+Accept: application/json
+
+### Získaj top skóre pre hru flood
+GET http://localhost:8080/api/score/flood
+Accept: application/json
+
+### Pridaj nové skóre
+POST http://localhost:8080/api/score
+Content-Type: application/json
+
+{
+  "game": "flood",
+  "player": "Alice",
+  "points": 25,
+  "playedOn": "2026-04-11T10:00:00.000+00:00"
+}
+
+### Získaj top skóre pre inú hru
+GET http://localhost:8080/api/score/minesweeper
+Accept: application/json
+
+### Získaj komentáre pre hru flood
+GET http://localhost:8080/api/comment/flood
+Accept: application/json
+
+### Pridaj nový komentár
+POST http://localhost:8080/api/comment
+Content-Type: application/json
+
+{
+  "game": "flood",
+  "player": "Bob",
+  "content": "Skvelá hra!",
+  "commentedOn": "2026-04-11T10:00:00.000+00:00"
+}
+
+### Získaj priemerné hodnotenie pre hru flood
+GET http://localhost:8080/api/rating/average/flood
+Accept: application/json
+
+###
+
+### Získaj hodnotenie konkrétneho hráča
+GET http://localhost:8080/api/rating/flood/Alice
+Accept: application/json
+
+###
+
+### Nastav hodnotenie
+POST http://localhost:8080/api/rating
+Content-Type: application/json
+
+{
+  "game": "flood",
+  "player": "Alice",
+  "rating": 5,
+  "ratedOn": "2026-04-11T10:00:00.000+00:00"
+}
