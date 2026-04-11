@@ -4,6 +4,10 @@
 
 [Pozri na YouTube](https://www.youtube.com/watch?v=nVuR3AM56sg)
 
+## Video ukážka JPA + REST (Odovzdanie 2)
+
+[Pozri na YouTube](https://youtu.be/qgBGMQk6gJw)
+
 ---
 
 # GameStudio Readme (SK)
