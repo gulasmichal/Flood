@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="sk">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Flood</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<div class="login-page">
+    <div class="login-card">
+        <div class="login-logo">FLOOD</div>
+        <div class="login-sub">Zaplavte celú plochu čo najrýchlejšie</div>
+
+        <!-- Success message -->
+        <div th:if="${success}" class="login-success" th:text="${success}"></div>
+        <!-- Error message -->
+        <div th:if="${error}" class="login-error" th:text="${error}"></div>
+
+        <!-- LOGIN form -->
+        <div id="sectionLogin" th:style="${tab == 'register' ? 'display:none' : ''}">
+            <form method="post" th:action="@{/login}">
+                <input type="text"     name="username" placeholder="Používateľské meno" maxlength="30" autofocus autocomplete="username"/>
+                <input type="password" name="password" placeholder="Heslo" autocomplete="current-password"/>
+                <button type="submit">PRIHLÁSIŤ SA</button>
+            </form>
+            <div class="login-switch">
+                Nemáte účet? <a href="#" class="link-btn" onclick="showSection('register'); return false;">Registrovať sa</a>
+            </div>
+        </div>
+
+        <!-- REGISTER form -->
+        <div id="sectionRegister" th:style="${tab == 'register' ? '' : 'display:none'}">
+            <form method="post" th:action="@{/register}">
+                <input type="text"     name="username"  placeholder="Zvoľte meno" maxlength="30" autocomplete="username"/>
+                <input type="password" name="password"  placeholder="Heslo (min. 3 znaky)" autocomplete="new-password"/>
+                <input type="password" name="password2" placeholder="Zopakujte heslo" autocomplete="new-password"/>
+                <button type="submit">REGISTROVAŤ SA</button>
+            </form>
+            <div class="login-switch">
+                Už máte účet? <a href="#" class="link-btn" onclick="showSection('login'); return false;">Prihlásiť sa</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showSection(name) {
+    document.getElementById('sectionLogin').style.display    = name === 'login'    ? '' : 'none';
+    document.getElementById('sectionRegister').style.display = name === 'register' ? '' : 'none';
+}
+</script>
+</body>
+</html>

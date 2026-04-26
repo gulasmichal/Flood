@@ -8,9 +8,9 @@ import java.util.Date;
 @Entity
 @NamedQueries({
         @NamedQuery(name = "Score.getTopScores",
-                query = "SELECT s FROM Score s WHERE s.game=:game ORDER BY s.points DESC"),
+                query = "SELECT s FROM Score s WHERE s.game=:game ORDER BY s.points DESC, s.duration ASC NULLS LAST"),
         @NamedQuery(name = "Score.getAllScores",
-                query = "SELECT s FROM Score s ORDER BY s.points DESC"),
+                query = "SELECT s FROM Score s ORDER BY s.points DESC, s.duration ASC NULLS LAST"),
         @NamedQuery(name = "Score.resetScores",
                 query = "DELETE FROM Score s")
 })
@@ -24,14 +24,20 @@ public class Score implements Serializable {
     private String game;
     private String player;
     private int points;
+    private Integer duration; // seconds, nullable for old records
     private Date playedOn;
 
     public Score() {}
 
     public Score(String game, String player, int points, Date playedOn) {
+        this(game, player, points, null, playedOn);
+    }
+
+    public Score(String game, String player, int points, Integer duration, Date playedOn) {
         this.game = game;
         this.player = player;
         this.points = points;
+        this.duration = duration;
         this.playedOn = playedOn;
     }
 
@@ -47,11 +53,14 @@ public class Score implements Serializable {
     public int getPoints() { return points; }
     public void setPoints(int points) { this.points = points; }
 
+    public Integer getDuration() { return duration; }
+    public void setDuration(Integer duration) { this.duration = duration; }
+
     public Date getPlayedOn() { return playedOn; }
     public void setPlayedOn(Date playedOn) { this.playedOn = playedOn; }
 
     @Override
     public String toString() {
-        return "Score{game='" + game + "', player='" + player + "', points=" + points + ", playedOn=" + playedOn + '}';
+        return "Score{game='" + game + "', player='" + player + "', points=" + points + ", duration=" + duration + '}';
     }
 }
