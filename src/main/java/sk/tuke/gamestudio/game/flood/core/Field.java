@@ -4,6 +4,7 @@ import java.util.EnumMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Random;
 
 public class Field {
 
@@ -28,6 +29,13 @@ public class Field {
         this(DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_MAX_MOVES);
     }
 
+    public Field(int rows, int cols, int maxMoves, long seed) {
+        this.rows = rows;
+        this.cols = cols;
+        this.maxMoves = maxMoves;
+        generateWithSeed(seed);
+    }
+
     public void generate() {
         moveCount = 0;
         gameState = GameState.PLAYING;
@@ -40,6 +48,22 @@ public class Field {
         }
 
         // flood initial connected region from (0,0)
+        initialFlood(tiles[0][0].getColor());
+    }
+
+    public void generateWithSeed(long seed) {
+        moveCount = 0;
+        gameState = GameState.PLAYING;
+        tiles = new Tile[rows][cols];
+        Random rng = new Random(seed);
+        TileColor[] colors = TileColor.values();
+
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                tiles[r][c] = new Tile(colors[rng.nextInt(colors.length)]);
+            }
+        }
+
         initialFlood(tiles[0][0].getColor());
     }
 

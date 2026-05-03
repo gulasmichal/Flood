@@ -32,6 +32,16 @@ public class ScoreServiceJPA implements ScoreService {
     }
 
     @Override
+    public List<Score> getScoresByPlayer(String gamePrefix, String player) {
+        return entityManager.createQuery(
+                "SELECT s FROM Score s WHERE s.game LIKE :gamePrefix AND s.player = :player ORDER BY s.points DESC",
+                Score.class)
+                .setParameter("gamePrefix", gamePrefix + "%")
+                .setParameter("player", player)
+                .getResultList();
+    }
+
+    @Override
     public void reset() {
         entityManager.createNamedQuery("Score.resetScores").executeUpdate();
     }

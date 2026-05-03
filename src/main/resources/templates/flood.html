@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <title>Flood</title>
+    <link rel="icon" type="image/png" th:href="@{/css/favicon.png}"/>
     <link rel="stylesheet" th:href="@{/css/style.css}"/>
 </head>
 <body>
@@ -15,6 +16,8 @@
     <h1>FLOOD</h1>
     <div class="header-right">
         <button class="sound-btn" id="soundBtn" title="Zvuk">🔊</button>
+        <button class="colorblind-btn" id="colorblindBtn" title="Režim pre farboslepých">👁 CB</button>
+        <a th:href="@{/stats}" class="nav-back-btn">📊 Štatistiky</a>
         <span style="color:var(--muted);font-size:0.88rem">
             Hráč: <strong style="color:var(--text)" th:text="${player}">Player</strong>
         </span>
@@ -31,15 +34,25 @@
     <div class="game-panel">
 
         <!-- Controls -->
-        <form method="post" th:action="@{/new}" class="controls-bar">
-            <label for="diff">Obtiažnosť:</label>
-            <select name="difficulty" id="diff" onchange="this.form.submit()">
-                <option value="easy"   th:selected="${difficulty == 'easy'}">Jednoduchá  (6×6 · 20 ťahov)</option>
-                <option value="medium" th:selected="${difficulty == 'medium'}">Stredná     (8×8 · 25 ťahov)</option>
-                <option value="hard"   th:selected="${difficulty == 'hard'}">Ťažká       (12×12 · 30 ťahov)</option>
-            </select>
-            <button type="submit" class="btn-primary">Nová hra</button>
-        </form>
+        <div class="controls-bar">
+            <form method="post" th:action="@{/new}" style="display:contents">
+                <label for="diff">Obtiažnosť:</label>
+                <select name="difficulty" id="diff" onchange="this.form.submit()">
+                    <option value="easy"   th:selected="${difficulty == 'easy'}">Jednoduchá  (6×6 · 20 ťahov)</option>
+                    <option value="medium" th:selected="${difficulty == 'medium'}">Stredná     (8×8 · 25 ťahov)</option>
+                    <option value="hard"   th:selected="${difficulty == 'hard'}">Ťažká       (12×12 · 30 ťahov)</option>
+                </select>
+                <button type="submit" class="btn-primary">Nová hra</button>
+            </form>
+            <form method="post" th:action="@{/daily}" style="display:contents">
+                <button type="submit" class="daily-btn">⚡ Denná výzva</button>
+            </form>
+        </div>
+
+        <!-- Already played today banner -->
+        <div class="daily-already-played" th:if="${dailyAlreadyPlayed}">
+            Dnešnú výzvu ste už dnes hrali. Vráťte sa zajtra!
+        </div>
 
         <!-- Status bar -->
         <div class="status-bar">
@@ -83,7 +96,7 @@
                         th:class="${'color-btn ' + color.name().toLowerCase()
                             + (color.name().toLowerCase() == currentColor ? ' active-color' : '')
                             + (color.name().toLowerCase() == hintColor and gameState == 'PLAYING' ? ' hint-glow' : '')}"
-                        th:disabled="${gameState != 'PLAYING' or color.name().toLowerCase() == currentColor}"
+                        th:disabled="${gameState != 'PLAYING' or color.name().toLowerCase() == currentColor or dailyAlreadyPlayed}"
                         th:attr="data-color=${color.name().toLowerCase()}">
                         <span th:if="${color.name().toLowerCase() == hintColor and gameState == 'PLAYING'}"
                               class="hint-badge">?</span>
@@ -140,6 +153,21 @@
             </div>
         </div>
 
+        <!-- Achievements -->
+        <div class="card">
+            <h2><span class="card-icon">🏅</span> Úspechy</h2>
+            <ul class="achievement-list">
+                <li th:each="type : ${allAchievementTypes}"
+                    th:class="${earnedTypes.contains(type.name())} ? 'achievement earned' : 'achievement locked'">
+                    <span class="achievement-icon" th:text="${earnedTypes.contains(type.name())} ? '🥇' : '🔒'"></span>
+                    <div class="achievement-info">
+                        <div class="achievement-name" th:text="${type.displayName}"></div>
+                        <div class="achievement-desc" th:text="${type.description}"></div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
         <!-- Top scores -->
         <div class="card">
             <h2>
@@ -164,6 +192,22 @@
                 </li>
             </ul>
             <p th:if="${#lists.isEmpty(scores)}" style="color:var(--muted);font-size:0.82rem">
+                Zatiaľ žiadne skóre.</p>
+        </div>
+
+        <!-- Daily challenge leaderboard -->
+        <div class="card" th:if="${isDailyChallenge}">
+            <h2><span class="card-icon">⚡</span> Denná výzva — <span th:text="${todayDate}"></span></h2>
+            <ul class="score-list" th:if="${not #lists.isEmpty(dailyScores)}">
+                <li th:each="s, i : ${dailyScores}">
+                    <span class="rank" th:text="${i.index + 1 + '.'}">1.</span>
+                    <span class="sname" th:text="${s.player}">Player</span>
+                    <span class="score-time" th:if="${s.duration != null}"
+                          th:text="${'⏱ ' + s.duration / 60 + ':' + (s.duration % 60 < 10 ? '0' + s.duration % 60 : '' + s.duration % 60)}">⏱ 0:00</span>
+                    <span class="points" th:text="${s.points + ' b'}">10 b</span>
+                </li>
+            </ul>
+            <p th:if="${#lists.isEmpty(dailyScores)}" style="color:var(--muted);font-size:0.82rem">
                 Zatiaľ žiadne skóre.</p>
         </div>
 
@@ -238,10 +282,19 @@
                 <div class="lbl">Body</div>
             </div>
         </div>
-        <form method="post" th:action="@{/new}">
+        <form method="post" th:action="@{/new}" th:unless="${isDailyChallenge}">
             <input type="hidden" name="difficulty" th:value="${difficulty}"/>
             <button type="submit" class="overlay-btn">Nová hra →</button>
         </form>
+        <div th:if="${isDailyChallenge}">
+            <p style="color:var(--muted);margin-bottom:12px;font-size:0.9rem">Vráťte sa zajtra pre ďalšiu dennú výzvu!</p>
+            <form method="post" th:action="@{/new}">
+                <input type="hidden" name="difficulty" value="medium"/>
+                <button type="submit" class="overlay-btn" style="background:linear-gradient(135deg,var(--accent2),#1f6feb)">
+                    Hrať normálnu hru →
+                </button>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -476,6 +529,19 @@ function launchConfetti() {
     }
     draw();
 }
+
+// ===================== COLORBLIND MODE =====================
+let colorblindOn = localStorage.getItem('colorblindMode') === 'on';
+function applyColorblind() {
+    document.body.classList.toggle('colorblind-mode', colorblindOn);
+    document.getElementById('colorblindBtn').classList.toggle('active', colorblindOn);
+}
+applyColorblind();
+document.getElementById('colorblindBtn').addEventListener('click', () => {
+    colorblindOn = !colorblindOn;
+    localStorage.setItem('colorblindMode', colorblindOn ? 'on' : 'off');
+    applyColorblind();
+});
 
 /*]]>*/
 </script>

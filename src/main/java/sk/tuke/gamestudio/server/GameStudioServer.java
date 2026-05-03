@@ -6,6 +6,8 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import sk.tuke.gamestudio.service.*;
+import sk.tuke.gamestudio.service.AchievementService;
+import sk.tuke.gamestudio.service.AchievementServiceJPA;
 
 @SpringBootApplication
 @Configuration
@@ -34,5 +36,10 @@ public class GameStudioServer {
     @Bean
     public UserService userService() {
         return new UserServiceJPA();
+    }
+
+    @Bean
+    public AchievementService achievementService() {
+        return new AchievementServiceJPA();
     }
 }

@@ -8,5 +8,6 @@ public interface ScoreService {
     void addScore(Score score) throws ScoreException;
     List<Score> getTopScores(String game) throws ScoreException;
     List<Score> getAllScores() throws ScoreException;
+    List<Score> getScoresByPlayer(String gamePrefix, String player) throws ScoreException;
     void reset() throws ScoreException;
 }

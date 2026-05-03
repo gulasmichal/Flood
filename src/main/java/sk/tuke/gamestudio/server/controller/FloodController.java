@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import sk.tuke.gamestudio.entity.Achievement;
+import sk.tuke.gamestudio.entity.AchievementType;
 import sk.tuke.gamestudio.entity.Comment;
 import sk.tuke.gamestudio.entity.Rating;
 import sk.tuke.gamestudio.entity.Score;
@@ -14,6 +16,11 @@ import sk.tuke.gamestudio.game.flood.core.TileColor;
 import sk.tuke.gamestudio.game.flood.core.TileState;
 import sk.tuke.gamestudio.service.*;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -27,6 +34,7 @@ public class FloodController {
     @Autowired private CommentService commentService;
     @Autowired private RatingService ratingService;
     @Autowired private UserService userService;
+    @Autowired private AchievementService achievementService;
 
     // ===================== GAME PAGE =====================
     @GetMapping("/")
@@ -46,7 +54,24 @@ public class FloodController {
             session.setAttribute("gameStartMs", null);   // timer not yet started
             session.setAttribute("gameDurationSeconds", 0);
             session.setAttribute("moveHistory", new ArrayList<String>());
+            session.setAttribute("hintUsed", false);
+
+            // Load historical stats from DB
+            try {
+                List<Score> playerScores = scoreService.getScoresByPlayer(GAME_NAME, player);
+                int wonFromDb = playerScores.size();
+                int bestFromDb = playerScores.stream().mapToInt(Score::getPoints).max().orElse(0);
+                session.setAttribute("gamesPlayed", wonFromDb);
+                session.setAttribute("gamesWon", wonFromDb);
+                session.setAttribute("bestScore", bestFromDb);
+            } catch (Exception ignored) {
+                session.setAttribute("gamesPlayed", 0);
+                session.setAttribute("gamesWon", 0);
+                session.setAttribute("bestScore", 0);
+            }
         }
+
+        boolean isDailyChallenge = Boolean.TRUE.equals(session.getAttribute("isDailyChallenge"));
 
         // Record game end once
         GameState state = field.getGameState();
@@ -67,9 +92,24 @@ public class FloodController {
                     gamesWon++;
                     int points = field.getMaxMoves() - field.getMoveCount();
                     if (points > bestScore) bestScore = points;
+                    String gameKey = isDailyChallenge ? todayDailyGameKey() : (GAME_NAME + "-" + difficulty);
                     try {
-                        scoreService.addScore(new Score(GAME_NAME + "-" + difficulty, player, points, durationSecs, new Date()));
+                        scoreService.addScore(new Score(gameKey, player, points, durationSecs, new Date()));
                     } catch (Exception ignored) {}
+
+                    // Award achievements (only for regular games, not daily)
+                    if (!isDailyChallenge) {
+                        try {
+                            int totalWins = scoreService.getScoresByPlayer(GAME_NAME, player).size();
+                            boolean hintUsed = Boolean.TRUE.equals(session.getAttribute("hintUsed"));
+                            if (totalWins == 1) achievementService.award(player, AchievementType.FIRST_WIN);
+                            if (!hintUsed) achievementService.award(player, AchievementType.HINTLESS);
+                            if (field.getMoveCount() <= field.getMaxMoves() / 2) achievementService.award(player, AchievementType.PERFECTIONIST);
+                            if (durationSecs > 0 && durationSecs < 60) achievementService.award(player, AchievementType.SPEEDRUNNER);
+                            if ("hard".equals(difficulty)) achievementService.award(player, AchievementType.HARD_WINNER);
+                            if (totalWins >= 10) achievementService.award(player, AchievementType.VETERAN);
+                        } catch (Exception ignored) {}
+                    }
                 }
 
                 session.setAttribute("gamesPlayed", gamesPlayed);
@@ -77,6 +117,18 @@ public class FloodController {
                 session.setAttribute("bestScore", bestScore);
                 session.setAttribute("gameEndRecorded", true);
             }
+        }
+
+        // Daily challenge: check if already played today
+        boolean dailyAlreadyPlayed = false;
+        List<Score> dailyScores = List.of();
+        if (isDailyChallenge) {
+            try {
+                List<Score> todayPlays = scoreService.getScoresByPlayer(todayDailyGameKey(), player);
+                dailyAlreadyPlayed = todayPlays.stream().anyMatch(s -> todayDailyGameKey().equals(s.getGame()));
+            } catch (Exception ignored) {}
+            try { dailyScores = scoreService.getTopScores(todayDailyGameKey()); }
+            catch (Exception ignored) {}
         }
 
         // Build board data
@@ -158,6 +210,20 @@ public class FloodController {
         try { model.addAttribute("myRating", ratingService.getRating(GAME_NAME, player)); }
         catch (Exception e) { model.addAttribute("myRating", 0); }
 
+        model.addAttribute("isDailyChallenge", isDailyChallenge);
+        model.addAttribute("dailyAlreadyPlayed", dailyAlreadyPlayed);
+        model.addAttribute("dailyScores", dailyScores);
+        model.addAttribute("todayDate", LocalDate.now(ZoneId.of("Europe/Bratislava")).toString());
+
+        try {
+            List<Achievement> achievements = achievementService.getAchievements(player);
+            Set<String> earnedTypes = achievements.stream().map(Achievement::getType).collect(Collectors.toSet());
+            model.addAttribute("earnedTypes", earnedTypes);
+        } catch (Exception e) {
+            model.addAttribute("earnedTypes", Set.of());
+        }
+        model.addAttribute("allAchievementTypes", AchievementType.values());
+
         return "flood";
     }
 
@@ -170,6 +236,26 @@ public class FloodController {
         session.setAttribute("gameStartMs", null);
         session.setAttribute("gameDurationSeconds", 0);
         session.setAttribute("moveHistory", new ArrayList<String>());
+        session.setAttribute("isDailyChallenge", false);
+        session.setAttribute("showHint", false);
+        session.setAttribute("hintUsed", false);
+        return "redirect:/";
+    }
+
+    // ===================== DAILY CHALLENGE =====================
+    @PostMapping("/daily")
+    public String startDaily(HttpSession session) {
+        String player = (String) session.getAttribute("player");
+        if (player == null) return "redirect:/login";
+        session.setAttribute("field", newDailyField());
+        session.setAttribute("difficulty", "medium");
+        session.setAttribute("gameEndRecorded", false);
+        session.setAttribute("gameStartMs", null);
+        session.setAttribute("gameDurationSeconds", 0);
+        session.setAttribute("moveHistory", new ArrayList<String>());
+        session.setAttribute("isDailyChallenge", true);
+        session.setAttribute("showHint", false);
+        session.setAttribute("hintUsed", false);
         return "redirect:/";
     }
 
@@ -197,6 +283,9 @@ public class FloodController {
     public String toggleHint(HttpSession session) {
         boolean current = Boolean.TRUE.equals(session.getAttribute("showHint"));
         session.setAttribute("showHint", !current);
+        if (!current) {
+            session.setAttribute("hintUsed", true);
+        }
         return "redirect:/";
     }
 
@@ -286,6 +375,15 @@ public class FloodController {
             case "hard" -> new Field(12, 12, 30);
             default     -> new Field(8, 8, 25);
         };
+    }
+
+    private String todayDailyGameKey() {
+        return "flood-daily-" + LocalDate.now(ZoneId.of("Europe/Bratislava"));
+    }
+
+    private Field newDailyField() {
+        long seed = LocalDate.now(ZoneId.of("Europe/Bratislava")).toEpochDay();
+        return new Field(8, 8, 25, seed);
     }
 
     private int getInt(HttpSession session, String key) {

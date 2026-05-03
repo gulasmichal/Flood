@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="sk">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Flood – Štatistiky</title>
+    <link rel="icon" type="image/png" th:href="@{/css/favicon.png}"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <link rel="stylesheet" th:href="@{/css/stats.css}"/>
+</head>
+<body>
+
+<header>
+    <h1>FLOOD</h1>
+    <div class="header-right">
+        <a th:href="@{/}" class="nav-back-btn">← Hra</a>
+        <span style="color:var(--muted);font-size:0.88rem">
+            Hráč: <strong style="color:var(--text)" th:text="${player}">Player</strong>
+        </span>
+        <form method="post" th:action="@{/logout}" style="display:inline">
+            <button type="submit" class="logout-btn">Odhlásiť</button>
+        </form>
+    </div>
+</header>
+
+<div class="stats-container">
+
+    <!-- Per-difficulty breakdown -->
+    <div class="card">
+        <h2><span class="card-icon">📊</span> Štatistiky podľa obtiažnosti</h2>
+        <table class="stats-table">
+            <thead>
+                <tr>
+                    <th>Obtiažnosť</th>
+                    <th>Výhry</th>
+                    <th>Úspešnosť</th>
+                    <th>Najlepšie skóre</th>
+                    <th>Priem. ťahy</th>
+                    <th>Najlepší čas</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="row : ${difficultyRows}">
+                    <td th:text="${row.label}"></td>
+                    <td th:text="${row.played}"></td>
+                    <td class="winrate-cell">
+                        <div class="winrate-bar-wrap">
+                            <div class="winrate-bar-fill" th:style="'width:' + ${row.played > 0 ? row.winRatePct : 0} + '%'"></div>
+                        </div>
+                        <span class="winrate-label" th:text="${row.played > 0 ? row.winRatePct + '%' : '—'}"></span>
+                    </td>
+                    <td th:text="${row.bestScore > 0 ? row.bestScore + ' b' : '—'}"></td>
+                    <td th:text="${row.played > 0 ? #numbers.formatDecimal(row.avgMoves, 1, 1) : '—'}"></td>
+                    <td th:text="${row.bestTime != null ? row.bestTime / 60 + ':' + (row.bestTime % 60 < 10 ? '0' + row.bestTime % 60 : '' + row.bestTime % 60) : '—'}"></td>
+                </tr>
+                <tr class="totals-row">
+                    <td><strong>Celkom</strong></td>
+                    <td th:text="${totalPlayed}"></td>
+                    <td class="winrate-cell">
+                        <div class="winrate-bar-wrap">
+                            <div class="winrate-bar-fill" th:style="'width:' + ${totalPlayed > 0 ? totalWinRatePct : 0} + '%'"></div>
+                        </div>
+                        <span class="winrate-label" th:text="${totalPlayed > 0 ? totalWinRatePct + '%' : '—'}"></span>
+                    </td>
+                    <td th:text="${totalBestScore > 0 ? totalBestScore + ' b' : '—'}"></td>
+                    <td th:text="${totalPlayed > 0 ? #numbers.formatDecimal(totalAvgMoves, 1, 1) : '—'}"></td>
+                    <td th:text="${totalBestTime != null ? totalBestTime / 60 + ':' + (totalBestTime % 60 < 10 ? '0' + totalBestTime % 60 : '' + totalBestTime % 60) : '—'}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Recent game history -->
+    <div class="card">
+        <h2><span class="card-icon">📜</span> Posledných 20 hier</h2>
+        <table class="stats-table history-table" th:if="${not #lists.isEmpty(recentScores)}">
+            <thead>
+                <tr>
+                    <th>Dátum</th>
+                    <th>Obtiažnosť</th>
+                    <th>Body</th>
+                    <th>Čas</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="s : ${recentScores}">
+                    <td th:text="${#dates.format(s.playedOn, 'dd.MM.yyyy HH:mm')}"></td>
+                    <td>
+                        <span class="diff-badge"
+                              th:classappend="${#strings.contains(s.game,'easy') ? ' diff-easy' : (#strings.contains(s.game,'hard') ? ' diff-hard' : ' diff-medium')}"
+                              th:text="${#strings.contains(s.game,'easy') ? 'Jednoduchá' : (#strings.contains(s.game,'hard') ? 'Ťažká' : 'Stredná')}"></span>
+                    </td>
+                    <td th:text="${s.points + ' b'}"></td>
+                    <td th:text="${s.duration != null ? s.duration / 60 + ':' + (s.duration % 60 < 10 ? '0' + s.duration % 60 : '' + s.duration % 60) : '—'}"></td>
+                </tr>
+            </tbody>
+        </table>
+        <p th:if="${#lists.isEmpty(recentScores)}" style="color:var(--muted);font-size:0.82rem">
+            Zatiaľ žiadne hry.</p>
+    </div>
+
+</div>
+</body>
+</html>

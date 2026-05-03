@@ -1,0 +1,80 @@
+.stats-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.84rem;
+}
+
+.stats-table th {
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-size: 0.72rem;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+}
+
+.stats-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+
+.stats-table tbody tr:last-child td { border-bottom: none; }
+
+.totals-row td {
+    border-top: 2px solid var(--border);
+    color: var(--accent2);
+    font-weight: 600;
+}
+
+.winrate-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.winrate-bar-wrap {
+    flex: 1;
+    max-width: 80px;
+    height: 6px;
+    background: var(--card);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.winrate-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), #1f6feb);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+}
+
+.winrate-label {
+    font-size: 0.8rem;
+    color: var(--text);
+    flex-shrink: 0;
+    min-width: 34px;
+}
+
+.diff-badge {
+    font-size: 0.75rem;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-weight: 600;
+}
+
+.diff-easy   { background: rgba(46,204,113,0.15); color: #2ecc71; border: 1px solid #2ecc71; }
+.diff-medium { background: rgba(88,166,255,0.15); color: var(--accent2); border: 1px solid var(--accent2); }
+.diff-hard   { background: rgba(233,69,96,0.15);  color: var(--accent); border: 1px solid var(--accent); }
+
+.history-table td:first-child { color: var(--muted); font-size: 0.78rem; }
