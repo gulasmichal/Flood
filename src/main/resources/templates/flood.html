@@ -17,13 +17,18 @@
     <div class="header-right">
         <button class="sound-btn" id="soundBtn" title="Zvuk">🔊</button>
         <button class="colorblind-btn" id="colorblindBtn" title="Režim pre farboslepých">👁 CB</button>
-        <a th:href="@{/stats}" class="nav-back-btn">📊 Štatistiky</a>
-        <span style="color:var(--muted);font-size:0.88rem">
-            Hráč: <strong style="color:var(--text)" th:text="${player}">Player</strong>
-        </span>
-        <form method="post" th:action="@{/logout}" style="display:inline">
-            <button type="submit" class="logout-btn">Odhlásiť</button>
-        </form>
+        <a th:if="${player != null}" th:href="@{/stats}" class="nav-back-btn">📊 Štatistiky</a>
+        <th:block th:if="${player != null}">
+            <span style="color:var(--muted);font-size:0.88rem">
+                Hráč: <strong style="color:var(--text)" th:text="${player}">Player</strong>
+            </span>
+            <form method="post" th:action="@{/logout}" style="display:inline">
+                <button type="submit" class="logout-btn">Odhlásiť</button>
+            </form>
+        </th:block>
+        <th:block th:if="${player == null}">
+            <a href="/login" class="nav-back-btn">Prihlásiť sa</a>
+        </th:block>
     </div>
 </header>
 
@@ -47,6 +52,11 @@
             <form method="post" th:action="@{/daily}" style="display:contents">
                 <button type="submit" class="daily-btn">⚡ Denná výzva</button>
             </form>
+        </div>
+
+        <!-- Guest info banner -->
+        <div th:if="${player == null}" style="background:rgba(88,166,255,0.1);border:1px solid rgba(88,166,255,0.3);border-radius:6px;padding:8px 12px;font-size:0.82rem;color:var(--muted);margin-bottom:8px">
+            Hráte ako hosť — skóre nebude uložené. <a href="/login" style="color:var(--accent)">Prihláste sa</a> pre ukladanie výsledkov.
         </div>
 
         <!-- Already played today banner -->
@@ -130,7 +140,7 @@
     <div class="side-panel">
 
         <!-- Session statistics -->
-        <div class="card">
+        <div class="card" th:if="${player != null}">
             <h2><span class="card-icon">📊</span> Vaša štatistika</h2>
             <div class="stats-grid">
                 <div class="stat-cell">
@@ -154,18 +164,55 @@
         </div>
 
         <!-- Achievements -->
-        <div class="card">
-            <h2><span class="card-icon">🏅</span> Úspechy</h2>
-            <ul class="achievement-list">
-                <li th:each="type : ${allAchievementTypes}"
-                    th:class="${earnedTypes.contains(type.name())} ? 'achievement earned' : 'achievement locked'">
-                    <span class="achievement-icon" th:text="${earnedTypes.contains(type.name())} ? '🥇' : '🔒'"></span>
-                    <div class="achievement-info">
-                        <div class="achievement-name" th:text="${type.displayName}"></div>
-                        <div class="achievement-desc" th:text="${type.description}"></div>
+        <div class="card" th:if="${player != null}">
+            <h2>
+                <span class="card-icon">🏅</span> Úspechy
+                <span class="ach-count"
+                      th:text="${earnedTypes.size() + ' / ' + totalAchievementCount}">0/10</span>
+            </h2>
+            <!-- Overall progress -->
+            <div class="ach-overall">
+                <div class="ach-overall-fill"
+                     th:style="'width:' + ${totalAchievementCount > 0 ? earnedTypes.size() * 100 / totalAchievementCount : 0} + '%'"></div>
+            </div>
+
+            <!-- Section: Herné výkony -->
+            <div class="ach-section">
+                <div class="ach-section-title">🎮 Herné výkony</div>
+                <div class="ach-grid">
+                    <div th:each="type : ${allAchievementTypes}"
+                         th:if="${type.category == 'Herné'}"
+                         th:class="${'ach-badge ' + (earnedTypes.contains(type.name()) ? 'earned' : 'locked')}"
+                         th:title="${type.description}">
+                        <div class="ach-badge-icon" th:text="${type.icon}"></div>
+                        <div class="ach-badge-name" th:text="${type.displayName}"></div>
+                        <div th:if="${earnedTypes.contains(type.name())}" class="ach-checkmark">✓</div>
                     </div>
-                </li>
-            </ul>
+                </div>
+            </div>
+
+            <!-- Section: Denné výzvy -->
+            <div class="ach-section">
+                <div class="ach-section-title">⚡ Denné výzvy</div>
+                <div th:each="type : ${allAchievementTypes}"
+                     th:if="${type.category == 'Denná výzva'}"
+                     th:class="${'ach-daily-card ' + (earnedTypes.contains(type.name()) ? 'earned' : 'locked')}">
+                    <div class="ach-daily-icon" th:text="${type.icon}"></div>
+                    <div class="ach-daily-info">
+                        <div class="ach-daily-name" th:text="${type.displayName}"></div>
+                        <div class="ach-daily-desc" th:text="${type.description}"></div>
+                        <div th:if="${type.target > 0}" class="ach-progress">
+                            <div class="ach-progress-bar">
+                                <div class="ach-progress-fill"
+                                     th:style="'width:' + ${dailyWinsCount >= type.target ? 100 : dailyWinsCount * 100 / type.target} + '%'"></div>
+                            </div>
+                            <span class="ach-progress-text"
+                                  th:text="${(dailyWinsCount > type.target ? type.target : dailyWinsCount) + ' / ' + type.target}"></span>
+                        </div>
+                    </div>
+                    <div th:if="${earnedTypes.contains(type.name())}" class="ach-daily-checkmark">✓</div>
+                </div>
+            </div>
         </div>
 
         <!-- Top scores -->
@@ -223,12 +270,14 @@
                 <span class="avg-label"
                       th:text="${avgRating > 0 ? avgRating + ' / 5' : 'Bez hodnotenia'}"></span>
             </div>
-            <form method="post" th:action="@{/rating}" class="rating-form">
+            <form th:if="${player != null}" method="post" th:action="@{/rating}" class="rating-form">
                 <button th:each="i : ${#numbers.sequence(1, 5)}"
                         type="submit" name="stars" th:value="${i}"
                         class="star-btn"
                         th:text="${i <= myRating ? '★' : '☆'}">★</button>
             </form>
+            <p th:if="${player == null}" style="color:var(--muted);font-size:0.82rem">
+                <a href="/login">Prihláste sa</a> pre hodnotenie.</p>
         </div>
 
         <!-- Move history -->
@@ -253,10 +302,12 @@
             </ul>
             <p th:if="${#lists.isEmpty(comments)}" style="color:var(--muted);font-size:0.82rem">
                 Zatiaľ žiadne komentáre.</p>
-            <form method="post" th:action="@{/comment}" class="comment-form">
+            <form th:if="${player != null}" method="post" th:action="@{/comment}" class="comment-form">
                 <input type="text" name="content" placeholder="Pridajte komentár…" maxlength="200"/>
                 <button type="submit">↩</button>
             </form>
+            <p th:if="${player == null}" style="color:var(--muted);font-size:0.82rem">
+                <a href="/login">Prihláste sa</a> pre pridanie komentára.</p>
         </div>
 
     </div>
@@ -282,10 +333,15 @@
                 <div class="lbl">Body</div>
             </div>
         </div>
-        <form method="post" th:action="@{/new}" th:unless="${isDailyChallenge}">
-            <input type="hidden" name="difficulty" th:value="${difficulty}"/>
-            <button type="submit" class="overlay-btn">Nová hra →</button>
-        </form>
+        <div th:unless="${isDailyChallenge}">
+            <form method="post" th:action="@{/new}" style="display:inline-block;margin-right:8px">
+                <input type="hidden" name="difficulty" th:value="${difficulty}"/>
+                <button type="submit" class="overlay-btn">Nová hra →</button>
+            </form>
+            <form method="post" th:action="@{/daily}" style="display:inline-block">
+                <button type="submit" class="overlay-btn" style="background:linear-gradient(135deg,#f39c12,#e67e22)">⚡ Denná výzva</button>
+            </form>
+        </div>
         <div th:if="${isDailyChallenge}">
             <p style="color:var(--muted);margin-bottom:12px;font-size:0.9rem">Vráťte sa zajtra pre ďalšiu dennú výzvu!</p>
             <form method="post" th:action="@{/new}">
@@ -303,12 +359,13 @@
 /*<![CDATA[*/
 
 // --- Game state from server ---
+const LOGGED_IN     = /*[[${player != null}]]*/ false;
 const GAME_STATE    = /*[[${gameState}]]*/ 'PLAYING';
 const TIMER_STARTED = /*[[${timerStarted}]]*/ false;
 const GAME_START_MS = /*[[${gameStartMs}]]*/ 0;
 const GAME_DURATION = /*[[${gameDurationSeconds}]]*/ 0;
-const MOVE_COUNT    = /*[[${field.moveCount}]]*/ 0;
-const MAX_MOVES     = /*[[${field.maxMoves}]]*/ 25;
+const MOVE_COUNT    = /*[[${field != null ? field.moveCount : 0}]]*/ 0;
+const MAX_MOVES     = /*[[${field != null ? field.maxMoves : 25}]]*/ 25;
 const CURRENT_COLOR = /*[[${currentColor}]]*/ '';
 const HINT_COLOR    = /*[[${hintColor}]]*/ '';
 
@@ -368,10 +425,10 @@ function formatTime(secs) {
 }
 
 let timerInterval = null;
-if (!TIMER_STARTED) {
+if (timerEl && !TIMER_STARTED) {
     // No move made yet — show placeholder
     timerEl.textContent = '—:——';
-} else if (GAME_STATE === 'PLAYING') {
+} else if (timerEl && GAME_STATE === 'PLAYING') {
     const startSec = Math.floor((Date.now() - GAME_START_MS) / 1000);
     let elapsed = startSec;
     timerEl.textContent = formatTime(elapsed);
@@ -379,16 +436,16 @@ if (!TIMER_STARTED) {
         elapsed++;
         timerEl.textContent = formatTime(elapsed);
     }, 1000);
-} else {
+} else if (timerEl) {
     timerEl.textContent = formatTime(GAME_DURATION);
 }
 
 // ===================== HOVER PREVIEW (client-side BFS) =====================
 const boardEl   = document.getElementById('game-board');
-const boardData = JSON.parse(boardEl.getAttribute('data-board'));
-const floodedData = JSON.parse(boardEl.getAttribute('data-flooded'));
+const boardData   = boardEl ? JSON.parse(boardEl.getAttribute('data-board'))   : [];
+const floodedData = boardEl ? JSON.parse(boardEl.getAttribute('data-flooded')) : [];
 const ROWS = boardData.length;
-const COLS = boardData[0].length;
+const COLS = ROWS > 0 ? boardData[0].length : 0;
 
 function bfsPreview(targetColor) {
     if (targetColor === CURRENT_COLOR) return [];
