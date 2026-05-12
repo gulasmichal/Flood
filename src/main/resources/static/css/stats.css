@@ -1,7 +1,9 @@
+/* stats.css — light theme, inherits variables from style.css */
+
 .stats-container {
-    max-width: 900px;
+    max-width: 920px;
     margin: 0 auto;
-    padding: 24px 20px;
+    padding: 28px 20px;
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -16,65 +18,70 @@
 .stats-table th {
     color: var(--muted);
     text-transform: uppercase;
-    letter-spacing: 0.8px;
-    font-size: 0.72rem;
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--border);
+    letter-spacing: 0.9px;
+    font-size: 0.70rem;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
     text-align: left;
+    font-weight: 700;
 }
 
 .stats-table td {
-    padding: 9px 10px;
-    border-bottom: 1px solid var(--border);
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
     vertical-align: middle;
+    color: var(--text);
 }
 
+.stats-table tbody tr { transition: background 0.15s; }
+.stats-table tbody tr:hover { background: rgba(255,255,255,0.55); }
 .stats-table tbody tr:last-child td { border-bottom: none; }
 
 .totals-row td {
-    border-top: 2px solid var(--border);
-    color: var(--accent2);
-    font-weight: 600;
+    border-top: 1px solid rgba(29,111,176,0.20);
+    color: var(--accent);
+    font-weight: 700;
 }
 
-.winrate-cell {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
+.winrate-cell { display: flex; align-items: center; gap: 8px; }
 .winrate-bar-wrap {
     flex: 1;
     max-width: 80px;
     height: 6px;
-    background: var(--card);
+    background: rgba(0,0,0,0.08);
     border-radius: 3px;
     overflow: hidden;
 }
-
 .winrate-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--accent2), #1f6feb);
+    background: linear-gradient(90deg, #1565c0, #1e88e5);
     border-radius: 3px;
-    transition: width 0.4s ease;
+    transition: width 0.5s ease;
 }
-
 .winrate-label {
     font-size: 0.8rem;
     color: var(--text);
     flex-shrink: 0;
-    min-width: 34px;
+    min-width: 36px;
+    font-variant-numeric: tabular-nums;
 }
 
 .diff-badge {
-    font-size: 0.75rem;
-    border-radius: 4px;
-    padding: 2px 8px;
-    font-weight: 600;
+    font-size: 0.74rem;
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-weight: 700;
+    display: inline-block;
 }
+.diff-easy   { background: rgba(22,163,74,0.10);   color: #15803d; border: 1px solid rgba(22,163,74,0.30); }
+.diff-medium { background: rgba(29,111,176,0.10);   color: var(--accent); border: 1px solid rgba(29,111,176,0.28); }
+.diff-hard   { background: rgba(232,51,74,0.10);    color: #be123c; border: 1px solid rgba(232,51,74,0.28); }
 
-.diff-easy   { background: rgba(46,204,113,0.15); color: #2ecc71; border: 1px solid #2ecc71; }
-.diff-medium { background: rgba(88,166,255,0.15); color: var(--accent2); border: 1px solid var(--accent2); }
-.diff-hard   { background: rgba(233,69,96,0.15);  color: var(--accent); border: 1px solid var(--accent); }
+.history-table td:first-child { color: var(--muted); font-size: 0.78rem; font-variant-numeric: tabular-nums; }
 
-.history-table td:first-child { color: var(--muted); font-size: 0.78rem; }
+@media (max-width: 640px) {
+    .stats-container { padding: 16px 12px; }
+    .stats-table { font-size: 0.78rem; }
+    .stats-table th, .stats-table td { padding: 8px 8px; }
+    .winrate-bar-wrap { display: none; }
+}

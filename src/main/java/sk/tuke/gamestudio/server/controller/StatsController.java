@@ -35,9 +35,9 @@ public class StatsController {
         List<Score> medium = all.stream().filter(s -> "flood-medium".equals(s.getGame())).toList();
         List<Score> hard   = all.stream().filter(s -> "flood-hard".equals(s.getGame())).toList();
 
-        DifficultyStats easyStats   = buildStats(easy,   "Jednoduchá", 20);
-        DifficultyStats mediumStats = buildStats(medium,  "Stredná",    25);
-        DifficultyStats hardStats   = buildStats(hard,    "Ťažká",      30);
+        DifficultyStats easyStats   = buildStats(easy,   "Malá",    20);
+        DifficultyStats mediumStats = buildStats(medium, "Stredná",  25);
+        DifficultyStats hardStats   = buildStats(hard,   "Veľká",    30);
 
         int totalPlayed = easyStats.getPlayed() + mediumStats.getPlayed() + hardStats.getPlayed();
         int totalBestScore = Math.max(Math.max(easyStats.getBestScore(), mediumStats.getBestScore()), hardStats.getBestScore());

@@ -2,6 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="sk">
 <head>
     <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Flood – Štatistiky</title>
     <link rel="icon" type="image/png" th:href="@{/css/favicon.png}"/>
     <link rel="stylesheet" th:href="@{/css/style.css}"/>
@@ -26,11 +27,11 @@
 
     <!-- Per-difficulty breakdown -->
     <div class="card">
-        <h2><span class="card-icon">📊</span> Štatistiky podľa obtiažnosti</h2>
+        <h2><span class="card-icon">📊</span> Štatistiky podľa veľkosti plátna</h2>
         <table class="stats-table">
             <thead>
                 <tr>
-                    <th>Obtiažnosť</th>
+                    <th>Veľkosť plátna</th>
                     <th>Výhry</th>
                     <th>Úspešnosť</th>
                     <th>Najlepšie skóre</th>
@@ -76,7 +77,7 @@
             <thead>
                 <tr>
                     <th>Dátum</th>
-                    <th>Obtiažnosť</th>
+                    <th>Veľkosť plátna</th>
                     <th>Body</th>
                     <th>Čas</th>
                 </tr>
@@ -87,7 +88,7 @@
                     <td>
                         <span class="diff-badge"
                               th:classappend="${#strings.contains(s.game,'easy') ? ' diff-easy' : (#strings.contains(s.game,'hard') ? ' diff-hard' : ' diff-medium')}"
-                              th:text="${#strings.contains(s.game,'easy') ? 'Jednoduchá' : (#strings.contains(s.game,'hard') ? 'Ťažká' : 'Stredná')}"></span>
+                              th:text="${#strings.contains(s.game,'easy') ? 'Malá' : (#strings.contains(s.game,'hard') ? 'Veľká' : 'Stredná')}"></span>
                     </td>
                     <td th:text="${s.points + ' b'}"></td>
                     <td th:text="${s.duration != null ? s.duration / 60 + ':' + (s.duration % 60 < 10 ? '0' + s.duration % 60 : '' + s.duration % 60) : '—'}"></td>

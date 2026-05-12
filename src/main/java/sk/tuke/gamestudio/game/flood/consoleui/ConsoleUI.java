@@ -44,16 +44,16 @@ public class ConsoleUI {
     }
 
     private Field selectDifficulty() {
-        System.out.println("\nZvolte narocnost:");
-        System.out.println("  1. Jednoducha  ( 6x6,  20 tahov)");
-        System.out.println("  2. Stredna     ( 8x8,  25 tahov)");
-        System.out.println("  3. Tazka       (12x12, 30 tahov)");
+        System.out.println("\nZvolte velkost platna:");
+        System.out.println("  1. Mala    ( 6x6,  20 tahov)");
+        System.out.println("  2. Stredna ( 8x8,  25 tahov)");
+        System.out.println("  3. Velka   (12x12, 30 tahov)");
         while (true) {
             System.out.print("Vasa volba (1-3): ");
             switch (scanner.nextLine().trim()) {
-                case "1": difficultyName = "Jednoducha";  return new Field(6,  6,  20);
-                case "2": difficultyName = "Stredna";     return new Field(8,  8,  25);
-                case "3": difficultyName = "Tazka";       return new Field(12, 12, 30);
+                case "1": difficultyName = "Mala";    return new Field(6,  6,  20);
+                case "2": difficultyName = "Stredna"; return new Field(8,  8,  25);
+                case "3": difficultyName = "Velka";   return new Field(12, 12, 30);
                 default:  System.out.println("Neplatna volba. Zadajte 1, 2 alebo 3.");
             }
         }
@@ -70,7 +70,7 @@ public class ConsoleUI {
             }
         }
 
-        System.out.printf("%nHrac: %s  |  Narocnost: %s%n%n", playerName, difficultyName);
+        System.out.printf("%nHrac: %s  |  Velkost platna: %s%n%n", playerName, difficultyName);
         this.field.generate();
 
         do {

@@ -50,8 +50,8 @@ public class FloodController {
         // Public data — always visible to everyone (logged-in and guests)
         String scoresDifficulty = (ld != null && List.of("easy","medium","hard").contains(ld)) ? ld : "medium";
         String scoresDifficultyLabel = switch (scoresDifficulty) {
-            case "easy" -> "Jednoduchá";
-            case "hard" -> "Ťažká";
+            case "easy" -> "Malá";
+            case "hard" -> "Veľká";
             default     -> "Stredná";
         };
         model.addAttribute("scoresDifficulty", scoresDifficulty);
@@ -196,8 +196,8 @@ public class FloodController {
         boolean timerStarted = gameStartMs != null;
 
         String difficultyLabel = switch (difficulty) {
-            case "easy" -> "Jednoduchá";
-            case "hard" -> "Ťažká";
+            case "easy" -> "Malá";
+            case "hard" -> "Veľká";
             default     -> "Stredná";
         };
 
@@ -230,8 +230,8 @@ public class FloodController {
             catch (Exception e) { model.addAttribute("scores", List.of()); }
             model.addAttribute("scoresDifficulty", difficulty);
             model.addAttribute("scoresDifficultyLabel", switch (difficulty) {
-                case "easy" -> "Jednoduchá";
-                case "hard" -> "Ťažká";
+                case "easy" -> "Malá";
+                case "hard" -> "Veľká";
                 default     -> "Stredná";
             });
         }

@@ -2,6 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="sk">
 <head>
     <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Flood</title>
     <link rel="icon" type="image/png" th:href="@{/css/favicon.png}"/>
     <link rel="stylesheet" th:href="@{/css/style.css}"/>
@@ -41,11 +42,11 @@
         <!-- Controls -->
         <div class="controls-bar">
             <form method="post" th:action="@{/new}" style="display:contents">
-                <label for="diff">Obtiažnosť:</label>
+                <label for="diff">Veľkosť plátna:</label>
                 <select name="difficulty" id="diff" onchange="this.form.submit()">
-                    <option value="easy"   th:selected="${difficulty == 'easy'}">Jednoduchá  (6×6 · 20 ťahov)</option>
-                    <option value="medium" th:selected="${difficulty == 'medium'}">Stredná     (8×8 · 25 ťahov)</option>
-                    <option value="hard"   th:selected="${difficulty == 'hard'}">Ťažká       (12×12 · 30 ťahov)</option>
+                    <option value="easy"   th:selected="${difficulty == 'easy'}">Malá    (6×6 · 20 ťahov)</option>
+                    <option value="medium" th:selected="${difficulty == 'medium'}">Stredná (8×8 · 25 ťahov)</option>
+                    <option value="hard"   th:selected="${difficulty == 'hard'}">Veľká   (12×12 · 30 ťahov)</option>
                 </select>
                 <button type="submit" class="btn-primary">Nová hra</button>
             </form>
@@ -55,8 +56,8 @@
         </div>
 
         <!-- Guest info banner -->
-        <div th:if="${player == null}" style="background:rgba(88,166,255,0.1);border:1px solid rgba(88,166,255,0.3);border-radius:6px;padding:8px 12px;font-size:0.82rem;color:var(--muted);margin-bottom:8px">
-            Hráte ako hosť — skóre nebude uložené. <a href="/login" style="color:var(--accent)">Prihláste sa</a> pre ukladanie výsledkov.
+        <div th:if="${player == null}" class="guest-banner">
+            Hráte ako hosť — skóre nebude uložené. <a href="/login">Prihláste sa</a> pre ukladanie výsledkov.
         </div>
 
         <!-- Already played today banner -->
@@ -223,11 +224,11 @@
             <!-- Leaderboard difficulty switcher -->
             <div class="lb-switcher">
                 <a th:href="@{/(ld='easy')}"
-                   th:class="${scoresDifficulty == 'easy' ? 'lb-tab active' : 'lb-tab'}">Jednoduchá</a>
+                   th:class="${scoresDifficulty == 'easy' ? 'lb-tab active' : 'lb-tab'}">Malá</a>
                 <a th:href="@{/(ld='medium')}"
                    th:class="${scoresDifficulty == 'medium' ? 'lb-tab active' : 'lb-tab'}">Stredná</a>
                 <a th:href="@{/(ld='hard')}"
-                   th:class="${scoresDifficulty == 'hard' ? 'lb-tab active' : 'lb-tab'}">Ťažká</a>
+                   th:class="${scoresDifficulty == 'hard' ? 'lb-tab active' : 'lb-tab'}">Veľká</a>
             </div>
             <ul class="score-list" th:if="${not #lists.isEmpty(scores)}">
                 <li th:each="s, i : ${scores}">
@@ -333,12 +334,12 @@
                 <div class="lbl">Body</div>
             </div>
         </div>
-        <div th:unless="${isDailyChallenge}">
-            <form method="post" th:action="@{/new}" style="display:inline-block;margin-right:8px">
+        <div th:unless="${isDailyChallenge}" style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px">
+            <form method="post" th:action="@{/new}">
                 <input type="hidden" name="difficulty" th:value="${difficulty}"/>
                 <button type="submit" class="overlay-btn">Nová hra →</button>
             </form>
-            <form method="post" th:action="@{/daily}" style="display:inline-block">
+            <form method="post" th:action="@{/daily}">
                 <button type="submit" class="overlay-btn" style="background:linear-gradient(135deg,#f39c12,#e67e22)">⚡ Denná výzva</button>
             </form>
         </div>
@@ -409,6 +410,25 @@ function playWin()    {
         setTimeout(() => playTone(f, 'sine', 0.5, 0.25), i * 120));
 }
 function playLose()   { playTone(180, 'sawtooth', 0.6, 0.25); }
+
+// Restore scroll position after page reload (e.g. after color pick)
+// Double rAF: first frame triggers layout, second frame has correct scrollHeight
+(function () {
+    const saved = sessionStorage.getItem('floodScrollY');
+    if (saved !== null) {
+        sessionStorage.removeItem('floodScrollY');
+        requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+                window.scrollTo(0, parseInt(saved, 10));
+            });
+        });
+    }
+})();
+
+// Save scroll position before color form submit so we can restore it after reload
+document.getElementById('colorForm').addEventListener('submit', function () {
+    sessionStorage.setItem('floodScrollY', window.scrollY);
+});
 
 // Play sound on color button click
 document.querySelectorAll('.color-btn:not(:disabled)').forEach(btn => {
@@ -599,6 +619,37 @@ document.getElementById('colorblindBtn').addEventListener('click', () => {
     localStorage.setItem('colorblindMode', colorblindOn ? 'on' : 'off');
     applyColorblind();
 });
+
+// ===================== ACHIEVEMENT TOOLTIP =====================
+(function () {
+    const tip = document.createElement('div');
+    tip.id = 'ach-tip';
+    document.body.appendChild(tip);
+
+    function positionTip(e) {
+        const pad = 12;
+        const x = e.clientX + pad;
+        const y = e.clientY - tip.offsetHeight - pad;
+        const maxX = window.innerWidth  - tip.offsetWidth  - 8;
+        const minY = 8;
+        tip.style.left = Math.min(x, maxX) + 'px';
+        tip.style.top  = Math.max(y, minY) + 'px';
+    }
+
+    document.querySelectorAll('.ach-badge[title], .ach-daily-card[title]').forEach(el => {
+        const text = el.getAttribute('title');
+        el.removeAttribute('title');           // prevent ugly native tooltip
+        el.setAttribute('data-tip', text);
+
+        el.addEventListener('mouseenter', e => {
+            tip.textContent = text;
+            tip.classList.add('visible');
+            positionTip(e);
+        });
+        el.addEventListener('mousemove', positionTip);
+        el.addEventListener('mouseleave', () => tip.classList.remove('visible'));
+    });
+})();
 
 /*]]>*/
 </script>
