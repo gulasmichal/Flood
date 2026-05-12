@@ -8,6 +8,10 @@
 
 [Pozri na YouTube](https://youtu.be/qgBGMQk6gJw)
 
+## Video ukážka UI (Odovzdanie 3)
+
+[Pozri na YouTube](https://youtu.be/5J2Wh6Z5fXA)
+
 ---
 
 # GameStudio Readme (SK)

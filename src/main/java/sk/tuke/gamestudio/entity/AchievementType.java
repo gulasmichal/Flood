@@ -5,7 +5,7 @@ public enum AchievementType {
     HINTLESS("Bez nápovedy",      "Vyhraj hru bez použitia tlačidla nápovedy.",          "🧠", "Herné",        0),
     PERFECTIONIST("Perfekcionista","Vyhraj hru s použitím najviac 50 % povolených ťahov.","✨", "Herné",        0),
     SPEEDRUNNER("Rýchlostný bežec","Vyhraj hru za menej ako 60 sekúnd.",                 "⏱️", "Herné",        0),
-    HARD_WINNER("Víťaz ťažkej hry","Vyhraj hru na ťažkej obtiažnosti.",                 "💪", "Herné",        0),
+    COMEBACK("Na poslednú chvíľu", "Vyhraj hru keď ti zostával práve 1 ťah.",            "🫀", "Herné",        0),
     VETERAN("Veterán",            "Vyhraj celkovo 10 hier.",                             "🎖️", "Herné",        0),
     DAILY_FIRST("Prvá denná výzva","Dokonči svoju prvú dennú výzvu.",                    "📅", "Denná výzva",  0),
     DAILY_10("Denný hrdina",      "Dokonči 10 denných výziev.",                         "🔥", "Denná výzva", 10),

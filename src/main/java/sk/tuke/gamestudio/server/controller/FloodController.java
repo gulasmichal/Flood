@@ -16,7 +16,9 @@ import sk.tuke.gamestudio.game.flood.core.TileColor;
 import sk.tuke.gamestudio.game.flood.core.TileState;
 import sk.tuke.gamestudio.service.*;
 
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -123,13 +125,15 @@ public class FloodController {
                         // Award achievements for regular games
                         if (!isDailyChallenge) {
                             try {
-                                int totalWins = scoreService.getScoresByPlayer(GAME_NAME, player).size();
+                                int totalWins = scoreService.getScoresByPlayer(GAME_NAME + "-easy",   player).size()
+                                             + scoreService.getScoresByPlayer(GAME_NAME + "-medium", player).size()
+                                             + scoreService.getScoresByPlayer(GAME_NAME + "-hard",   player).size();
                                 boolean hintUsed = Boolean.TRUE.equals(session.getAttribute("hintUsed"));
                                 if (totalWins == 1) achievementService.award(player, AchievementType.FIRST_WIN);
                                 if (!hintUsed) achievementService.award(player, AchievementType.HINTLESS);
                                 if (field.getMoveCount() <= field.getMaxMoves() / 2) achievementService.award(player, AchievementType.PERFECTIONIST);
                                 if (durationSecs > 0 && durationSecs < 60) achievementService.award(player, AchievementType.SPEEDRUNNER);
-                                if ("hard".equals(difficulty)) achievementService.award(player, AchievementType.HARD_WINNER);
+                                if (field.getMaxMoves() - field.getMoveCount() == 1) achievementService.award(player, AchievementType.COMEBACK);
                                 if (totalWins >= 10) achievementService.award(player, AchievementType.VETERAN);
                             } catch (Exception ignored) {}
                         } else {
@@ -317,15 +321,91 @@ public class FloodController {
         return "redirect:/";
     }
 
+    // ===================== FLOOD MOVE (AJAX) =====================
+    @SuppressWarnings("unchecked")
+    @PostMapping("/flood-move")
+    @ResponseBody
+    public Map<String, Object> floodMoveAjax(@RequestParam String color, HttpSession session) {
+        Field field = (Field) session.getAttribute("field");
+        Map<String, Object> res = new HashMap<>();
+
+        if (field != null && field.getGameState() == GameState.PLAYING) {
+            if (session.getAttribute("gameStartMs") == null) {
+                session.setAttribute("gameStartMs", System.currentTimeMillis());
+            }
+            field.flood(TileColor.valueOf(color.toUpperCase()));
+            List<String> history = (List<String>) session.getAttribute("moveHistory");
+            if (history == null) history = new ArrayList<>();
+            history.add(color);
+            session.setAttribute("moveHistory", history);
+        }
+
+        if (field == null) { res.put("error", "no game"); return res; }
+
+        int rows = field.getRows(), cols = field.getCols();
+        List<List<String>>  board       = new ArrayList<>();
+        List<List<Boolean>> floodedGrid = new ArrayList<>();
+        for (int r = 0; r < rows; r++) {
+            List<String>  row  = new ArrayList<>();
+            List<Boolean> fRow = new ArrayList<>();
+            for (int c = 0; c < cols; c++) {
+                row.add(field.getTile(r, c).getColor().name().toLowerCase());
+                fRow.add(field.getTile(r, c).getState() == TileState.FLOODED);
+            }
+            board.add(row);
+            floodedGrid.add(fRow);
+        }
+
+        int total   = rows * cols;
+        int flooded = field.getFloodedCount();
+        GameState state = field.getGameState();
+        String currentColor2 = field.getTile(0, 0).getColor().name().toLowerCase();
+
+        boolean showHint = Boolean.TRUE.equals(session.getAttribute("showHint"));
+        TileColor hint   = showHint ? bestGainColor(field) : null;
+        Long gameStartMs = (Long) session.getAttribute("gameStartMs");
+        List<String> moveHistory = (List<String>) session.getAttribute("moveHistory");
+
+        res.put("gameState",     state.name());
+        res.put("moveCount",     field.getMoveCount());
+        res.put("maxMoves",      field.getMaxMoves());
+        res.put("flooded",       flooded);
+        res.put("total",         total);
+        res.put("floodedPct",    flooded * 100 / total);
+        res.put("currentColor",  currentColor2);
+        res.put("hintColor",     hint != null ? hint.name().toLowerCase() : "");
+        res.put("board",         board);
+        res.put("floodedGrid",   floodedGrid);
+        res.put("moveHistory",   moveHistory != null ? moveHistory : List.of());
+        res.put("timerStarted",  gameStartMs != null);
+        res.put("gameStartMs",   gameStartMs != null ? gameStartMs : 0L);
+        return res;
+    }
+
     // ===================== HINT TOGGLE =====================
     @PostMapping("/toggle-hint")
     public String toggleHint(HttpSession session) {
         boolean current = Boolean.TRUE.equals(session.getAttribute("showHint"));
         session.setAttribute("showHint", !current);
-        if (!current) {
-            session.setAttribute("hintUsed", true);
-        }
+        if (!current) session.setAttribute("hintUsed", true);
         return "redirect:/";
+    }
+
+    @PostMapping("/toggle-hint-ajax")
+    @ResponseBody
+    public Map<String, Object> toggleHintAjax(HttpSession session) {
+        boolean current = Boolean.TRUE.equals(session.getAttribute("showHint"));
+        boolean next = !current;
+        session.setAttribute("showHint", next);
+        if (next) session.setAttribute("hintUsed", true);
+
+        String hintColor = "";
+        if (next) {
+            Field field = (Field) session.getAttribute("field");
+            TileColor hint = field != null ? bestGainColor(field) : null;
+            if (hint != null) hintColor = hint.name().toLowerCase();
+        }
+        return Map.of("showHint", next, "hintColor", hintColor);
     }
 
     // ===================== COMMENT =====================

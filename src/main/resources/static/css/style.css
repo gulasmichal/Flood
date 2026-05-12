@@ -8,7 +8,7 @@
     --red:    #dc2626;
     --blue:   #2563eb;
     --green:  #16a34a;
-    --yellow: #d97706;
+    --yellow: #eab308;
     --purple: #7c3aed;
     --orange: #ea580c;
 
@@ -16,7 +16,7 @@
     --glow-red:    rgba(220,  38,  38, 0.30);
     --glow-blue:   rgba( 37,  99, 235, 0.30);
     --glow-green:  rgba( 22, 163,  74, 0.30);
-    --glow-yellow: rgba(217, 119,   6, 0.30);
+    --glow-yellow: rgba(234, 179,   8, 0.30);
     --glow-purple: rgba(124,  58, 237, 0.30);
     --glow-orange: rgba(234,  88,  12, 0.30);
 
@@ -465,7 +465,7 @@ header h1 {
 .color-btn.red    { background: var(--red);    box-shadow: 0 5px 16px rgba(220, 38, 38, 0.32); }
 .color-btn.blue   { background: var(--blue);   box-shadow: 0 5px 16px rgba( 37, 99,235, 0.32); }
 .color-btn.green  { background: var(--green);  box-shadow: 0 5px 16px rgba( 22,163, 74, 0.32); }
-.color-btn.yellow { background: var(--yellow); box-shadow: 0 5px 16px rgba(217,119,  6, 0.32); }
+.color-btn.yellow { background: var(--yellow); box-shadow: 0 5px 16px rgba(234,179,  8, 0.32); }
 .color-btn.purple { background: var(--purple); box-shadow: 0 5px 16px rgba(124, 58,237, 0.32); }
 .color-btn.orange { background: var(--orange); box-shadow: 0 5px 16px rgba(234, 88, 12, 0.32); }
 
@@ -473,7 +473,7 @@ header h1 {
 .color-btn.red:hover:not(:disabled)    { box-shadow: 0 10px 28px rgba(220, 38, 38, 0.60); }
 .color-btn.blue:hover:not(:disabled)   { box-shadow: 0 10px 28px rgba( 37, 99,235, 0.60); }
 .color-btn.green:hover:not(:disabled)  { box-shadow: 0 10px 28px rgba( 22,163, 74, 0.60); }
-.color-btn.yellow:hover:not(:disabled) { box-shadow: 0 10px 28px rgba(217,119,  6, 0.60); }
+.color-btn.yellow:hover:not(:disabled) { box-shadow: 0 10px 28px rgba(234,179,  8, 0.60); }
 .color-btn.purple:hover:not(:disabled) { box-shadow: 0 10px 28px rgba(124, 58,237, 0.60); }
 .color-btn.orange:hover:not(:disabled) { box-shadow: 0 10px 28px rgba(234, 88, 12, 0.60); }
 

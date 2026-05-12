@@ -4,7 +4,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Flood</title>
-    <link rel="icon" type="image/png" th:href="@{/css/favicon.png}"/>
+    <link rel="icon" type="image/png" th:href="@{/css/favicon2.png}"/>
     <link rel="stylesheet" th:href="@{/css/style.css}"/>
 </head>
 <body>
@@ -117,10 +117,10 @@
             </form>
 
             <!-- Hint toggle -->
-            <form method="post" th:action="@{/toggle-hint}">
-                <button type="submit"
+            <form method="post" th:action="@{/toggle-hint}" id="hintForm">
+                <button type="submit" id="hintBtn"
                         th:class="${showHint ? 'hint-toggle-btn active' : 'hint-toggle-btn'}">
-                    💡 <span th:text="${showHint ? 'Nápoveda: ZAP' : 'Nápoveda: VYP'}">Nápoveda: VYP</span>
+                    💡 <span id="hintBtnText" th:text="${showHint ? 'Nápoveda: ZAP' : 'Nápoveda: VYP'}">Nápoveda: VYP</span>
                 </button>
             </form>
 
@@ -411,28 +411,9 @@ function playWin()    {
 }
 function playLose()   { playTone(180, 'sawtooth', 0.6, 0.25); }
 
-// Restore scroll position after page reload (e.g. after color pick)
-// Double rAF: first frame triggers layout, second frame has correct scrollHeight
-(function () {
-    const saved = sessionStorage.getItem('floodScrollY');
-    if (saved !== null) {
-        sessionStorage.removeItem('floodScrollY');
-        requestAnimationFrame(function() {
-            requestAnimationFrame(function() {
-                window.scrollTo(0, parseInt(saved, 10));
-            });
-        });
-    }
-})();
-
-// Save scroll position before color form submit so we can restore it after reload
-document.getElementById('colorForm').addEventListener('submit', function () {
-    sessionStorage.setItem('floodScrollY', window.scrollY);
-});
-
-// Play sound on color button click
-document.querySelectorAll('.color-btn:not(:disabled)').forEach(btn => {
-    btn.addEventListener('mousedown', playClick);
+// Play sound on color button click (check disabled at call time, not at bind time)
+document.querySelectorAll('.color-btn').forEach(btn => {
+    btn.addEventListener('mousedown', () => { if (!btn.disabled) playClick(); });
 });
 
 // ===================== TIMER =====================
@@ -462,13 +443,18 @@ if (timerEl && !TIMER_STARTED) {
 
 // ===================== HOVER PREVIEW (client-side BFS) =====================
 const boardEl   = document.getElementById('game-board');
-const boardData   = boardEl ? JSON.parse(boardEl.getAttribute('data-board'))   : [];
-const floodedData = boardEl ? JSON.parse(boardEl.getAttribute('data-flooded')) : [];
-const ROWS = boardData.length;
-const COLS = ROWS > 0 ? boardData[0].length : 0;
+let boardData   = boardEl ? JSON.parse(boardEl.getAttribute('data-board'))   : [];
+let floodedData = boardEl ? JSON.parse(boardEl.getAttribute('data-flooded')) : [];
+let ROWS = boardData.length;
+let COLS = ROWS > 0 ? boardData[0].length : 0;
+
+// Mutable mirrors of server state — updated after each AJAX move
+let gameStateNow    = GAME_STATE;
+let currentColorNow = CURRENT_COLOR;
+let hintColorNow    = HINT_COLOR;
 
 function bfsPreview(targetColor) {
-    if (targetColor === CURRENT_COLOR) return [];
+    if (targetColor === currentColorNow) return [];
     // Find flooded cells
     const visited = Array.from({length: ROWS}, () => Array(COLS).fill(false));
     const queue = [];
@@ -502,12 +488,12 @@ function getTileEl(r, c) {
     return boardEl.querySelector(`.tile[data-r="${r}"][data-c="${c}"]`);
 }
 
-document.querySelectorAll('.color-btn:not(:disabled)').forEach(btn => {
+document.querySelectorAll('.color-btn').forEach(btn => {
     const color = btn.getAttribute('data-color');
     const badge = document.querySelector(`.preview-badge[data-color="${color}"]`);
 
     btn.addEventListener('mouseenter', () => {
-        if (GAME_STATE !== 'PLAYING') return;
+        if (btn.disabled || gameStateNow !== 'PLAYING') return;
         const tiles = bfsPreview(color);
         tiles.forEach(([r,c]) => { const el = getTileEl(r,c); if(el) el.classList.add('preview-highlight'); });
         if (badge && tiles.length > 0) {
@@ -526,7 +512,7 @@ const keyMap = { r:'red', g:'green', b:'blue', y:'yellow', p:'purple', o:'orange
 
 document.addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT') return;
-    if (GAME_STATE !== 'PLAYING') return;
+    if (gameStateNow !== 'PLAYING') return;
     const color = keyMap[e.key.toLowerCase()];
     if (!color) return;
     const btn = document.querySelector(`.color-btn[data-color="${color}"]:not(:disabled)`);
@@ -534,7 +520,141 @@ document.addEventListener('keydown', e => {
     btn.classList.add('keyboard-flash');
     btn.addEventListener('animationend', () => btn.classList.remove('keyboard-flash'), {once: true});
     playClick();
-    btn.click();
+    submitColor(color);
+});
+
+// ===================== AJAX MOVE =====================
+function submitColor(color) {
+    if (gameStateNow !== 'PLAYING') return;
+    fetch('/flood-move', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'color=' + encodeURIComponent(color)
+    })
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(applyMoveData)
+    .catch(() => { window.location.href = '/'; }); // fallback: full reload
+}
+
+function applyMoveData(data) {
+    // If game ended, reload — score/achievement recording happens on GET /
+    if (data.gameState !== 'PLAYING') {
+        window.location.href = '/';
+        return;
+    }
+
+    // Update mutable state
+    gameStateNow    = data.gameState;
+    currentColorNow = data.currentColor;
+    hintColorNow    = data.hintColor;
+
+    // Update board data used by BFS hover preview
+    boardData   = data.board;
+    floodedData = data.floodedGrid;
+    ROWS = boardData.length;
+    COLS = ROWS > 0 ? boardData[0].length : 0;
+
+    // Update tile DOM
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const el = getTileEl(r, c);
+            if (el) el.className = 'tile ' + data.board[r][c];
+        }
+    }
+
+    // Update status bar
+    const badges = document.querySelectorAll('.status-bar .stat-badge');
+    if (badges[0]) badges[0].textContent = data.flooded + ' / ' + data.total + ' (' + data.floodedPct + '%)';
+    if (badges[1]) badges[1].textContent = data.moveCount + ' / ' + data.maxMoves;
+    const fill = document.querySelector('.progress-bar-fill');
+    if (fill) fill.style.width = data.floodedPct + '%';
+
+    // Update color buttons
+    document.querySelectorAll('.color-btn').forEach(btn => {
+        const c = btn.getAttribute('data-color');
+        let cls = 'color-btn ' + c;
+        const isActive = c === data.currentColor;
+        const isHint   = c === data.hintColor;
+        if (isActive)  cls += ' active-color';
+        if (isHint)    cls += ' hint-glow';
+        btn.className = cls;
+        btn.disabled  = isActive;
+
+        const existingBadge = btn.querySelector('.hint-badge');
+        if (isHint) {
+            if (!existingBadge) {
+                const hb = document.createElement('span');
+                hb.className = 'hint-badge';
+                hb.textContent = '?';
+                btn.appendChild(hb);
+            }
+        } else if (existingBadge) {
+            existingBadge.remove();
+        }
+    });
+
+    // Start timer on first move
+    if (!timerInterval && data.timerStarted) {
+        const startSec = Math.floor((Date.now() - data.gameStartMs) / 1000);
+        let elapsed = startSec;
+        if (timerEl) {
+            timerEl.textContent = formatTime(elapsed);
+            timerInterval = setInterval(() => { elapsed++; timerEl.textContent = formatTime(elapsed); }, 1000);
+        }
+    }
+
+    // Update move history dots if the card exists
+    const moveDots = document.querySelector('.move-dots');
+    if (moveDots && data.moveHistory) {
+        moveDots.innerHTML = '';
+        data.moveHistory.forEach(m => {
+            const dot = document.createElement('div');
+            dot.className = 'move-dot ' + m;
+            moveDots.appendChild(dot);
+        });
+    }
+}
+
+// Intercept color form submit — use AJAX instead of page reload
+document.getElementById('colorForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const color = e.submitter ? e.submitter.value : null;
+    if (color) submitColor(color);
+});
+
+// Intercept hint toggle — use AJAX instead of page reload
+document.getElementById('hintForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    fetch('/toggle-hint-ajax', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            hintColorNow = data.hintColor;
+
+            // Update toggle button appearance
+            const btn  = document.getElementById('hintBtn');
+            const span = document.getElementById('hintBtnText');
+            btn.classList.toggle('active', data.showHint);
+            span.textContent = data.showHint ? 'Nápoveda: ZAP' : 'Nápoveda: VYP';
+
+            // Update hint-glow on color buttons
+            document.querySelectorAll('.color-btn').forEach(b => {
+                const c = b.getAttribute('data-color');
+                const isHint = c === data.hintColor;
+                b.classList.toggle('hint-glow', isHint);
+                const existingBadge = b.querySelector('.hint-badge');
+                if (isHint) {
+                    if (!existingBadge) {
+                        const hb = document.createElement('span');
+                        hb.className = 'hint-badge';
+                        hb.textContent = '?';
+                        b.appendChild(hb);
+                    }
+                } else if (existingBadge) {
+                    existingBadge.remove();
+                }
+            });
+        })
+        .catch(() => { window.location.href = '/'; });
 });
 
 // ===================== GAME OVER OVERLAY =====================
