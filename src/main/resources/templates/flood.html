@@ -271,7 +271,7 @@
                 <span class="avg-label"
                       th:text="${avgRating > 0 ? avgRating + ' / 5' : 'Bez hodnotenia'}"></span>
             </div>
-            <form th:if="${player != null}" method="post" th:action="@{/rating}" class="rating-form">
+            <form th:if="${player != null}" method="post" th:action="@{/rating}" class="rating-form" id="ratingForm">
                 <button th:each="i : ${#numbers.sequence(1, 5)}"
                         type="submit" name="stars" th:value="${i}"
                         class="star-btn"
@@ -303,7 +303,7 @@
             </ul>
             <p th:if="${#lists.isEmpty(comments)}" style="color:var(--muted);font-size:0.82rem">
                 Zatiaľ žiadne komentáre.</p>
-            <form th:if="${player != null}" method="post" th:action="@{/comment}" class="comment-form">
+            <form th:if="${player != null}" method="post" th:action="@{/comment}" class="comment-form" id="commentForm">
                 <input type="text" name="content" placeholder="Pridajte komentár…" maxlength="200"/>
                 <button type="submit">↩</button>
             </form>
@@ -656,6 +656,75 @@ document.getElementById('hintForm').addEventListener('submit', function(e) {
         })
         .catch(() => { window.location.href = '/'; });
 });
+
+// ===================== COMMENT AJAX =====================
+(function () {
+    const form = document.getElementById('commentForm');
+    if (!form) return;
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const input = form.querySelector('input[name="content"]');
+        const content = input ? input.value.trim() : '';
+        if (!content) return;
+        fetch('/comment-ajax', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'content=' + encodeURIComponent(content)
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.ok) return;
+            if (input) input.value = '';
+            // Hide "no comments" placeholder if present
+            const card = form.closest('.card');
+            const empty = card.querySelector('p');
+            if (empty) empty.style.display = 'none';
+            // Find or create the comment list
+            let ul = card.querySelector('.comment-list');
+            if (!ul) {
+                ul = document.createElement('ul');
+                ul.className = 'comment-list';
+                card.insertBefore(ul, form);
+            }
+            const li = document.createElement('li');
+            li.innerHTML = '<span class="comment-author">' + data.player + '</span>: <span>' + data.content + '</span>';
+            ul.appendChild(li);
+        })
+        .catch(() => form.submit());
+    });
+})();
+
+// ===================== RATING AJAX =====================
+(function () {
+    const form = document.getElementById('ratingForm');
+    if (!form) return;
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const stars = e.submitter ? parseInt(e.submitter.value, 10) : 0;
+        if (!stars) return;
+        fetch('/rating-ajax', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'stars=' + stars
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.ok) return;
+            // Update average stars display
+            const card = form.closest('.card');
+            card.querySelectorAll('.stars-display span').forEach((el, i) => {
+                el.className = (i + 1) <= data.avgRating ? 'star-on' : 'star-off';
+            });
+            const label = card.querySelector('.avg-label');
+            if (label) label.textContent = data.avgRating > 0 ? data.avgRating + ' / 5' : 'Bez hodnotenia';
+            // Update user's star buttons
+            form.querySelectorAll('.star-btn').forEach((btn, i) => {
+                btn.textContent = (i + 1) <= data.myRating ? '★' : '☆';
+            });
+        })
+        .catch(() => form.submit());
+    });
+})();
 
 // ===================== GAME OVER OVERLAY =====================
 if (GAME_STATE !== 'PLAYING') {

@@ -419,6 +419,18 @@ public class FloodController {
         return "redirect:/";
     }
 
+    @PostMapping("/comment-ajax")
+    @ResponseBody
+    public Map<String, Object> commentAjax(@RequestParam String content, HttpSession session) {
+        String player = (String) session.getAttribute("player");
+        if (player != null && content != null && !content.isBlank()) {
+            try { commentService.addComment(new Comment(GAME_NAME, player, content.trim(), new Date())); }
+            catch (Exception ignored) {}
+            return Map.of("ok", true, "player", player, "content", content.trim());
+        }
+        return Map.of("ok", false);
+    }
+
     // ===================== RATING =====================
     @PostMapping("/rating")
     public String rating(@RequestParam int stars, HttpSession session) {
@@ -428,6 +440,20 @@ public class FloodController {
             catch (Exception ignored) {}
         }
         return "redirect:/";
+    }
+
+    @PostMapping("/rating-ajax")
+    @ResponseBody
+    public Map<String, Object> ratingAjax(@RequestParam int stars, HttpSession session) {
+        String player = (String) session.getAttribute("player");
+        if (player != null && stars >= 1 && stars <= 5) {
+            try { ratingService.setRating(new Rating(GAME_NAME, player, stars, new Date())); }
+            catch (Exception ignored) {}
+            int avg = 0;
+            try { avg = ratingService.getAverageRating(GAME_NAME); } catch (Exception ignored) {}
+            return Map.of("ok", true, "avgRating", avg, "myRating", stars);
+        }
+        return Map.of("ok", false);
     }
 
     // ===================== LOGIN / REGISTER =====================
