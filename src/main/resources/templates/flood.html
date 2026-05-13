@@ -18,6 +18,7 @@
     <div class="header-right">
         <button class="sound-btn" id="soundBtn" title="Zvuk">🔊</button>
         <button class="colorblind-btn" id="colorblindBtn" title="Režim pre farboslepých">👁 CB</button>
+        <button class="help-btn" id="helpBtn" title="Pravidlá hry">?</button>
         <a th:if="${player != null}" th:href="@{/stats}" class="nav-back-btn">📊 Štatistiky</a>
         <th:block th:if="${player != null}">
             <span style="color:var(--muted);font-size:0.88rem">
@@ -311,6 +312,80 @@
                 <a href="/login">Prihláste sa</a> pre pridanie komentára.</p>
         </div>
 
+    </div>
+</div>
+
+<!-- ===================== HELP MODAL ===================== -->
+<div class="help-overlay" id="helpOverlay" style="display:none">
+    <div class="help-card">
+        <button class="help-close" id="helpClose">✕</button>
+        <div class="help-title">Ako hrať Flood</div>
+
+        <div class="help-section">
+            <div class="help-section-icon">🎯</div>
+            <div>
+                <div class="help-section-name">Cieľ hry</div>
+                <p>Zaplaviť celú hraciu plochu jednou farbou v čo najmenej ťahoch pred vypršaním limitu.</p>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <div class="help-section-icon">🌊</div>
+            <div>
+                <div class="help-section-name">Ako funguje ťah</div>
+                <p>Zaplavená oblasť začína v <strong>ľavom hornom rohu</strong>. Po kliknutí na farebnú tlačidlo všetky zaplavené políčka zmenia farbu a oblasť sa rozšíri na susedné políčka tej istej novej farby.</p>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <div class="help-section-icon">🏆</div>
+            <div>
+                <div class="help-section-name">Výhra a prehra</div>
+                <p><strong>Výhra:</strong> celá plocha je jednej farby pred dosiahnutím limitu ťahov.<br>
+                   <strong>Prehra:</strong> minutie všetkých ťahov bez úplného zaplavenia.<br>
+                   <strong>Skóre</strong> = zostatok ťahov po výhre.</p>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <div class="help-section-icon">⚙️</div>
+            <div>
+                <div class="help-section-name">Obtiažnosti</div>
+                <ul class="help-list">
+                    <li><strong>Malá</strong> — 6×6, 20 ťahov</li>
+                    <li><strong>Stredná</strong> — 8×8, 25 ťahov</li>
+                    <li><strong>Veľká</strong> — 12×12, 30 ťahov</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <div class="help-section-icon">⌨️</div>
+            <div>
+                <div class="help-section-name">Klávesové skratky</div>
+                <div class="help-keys">
+                    <span><span class="kb-key">R</span> červená</span>
+                    <span><span class="kb-key">G</span> zelená</span>
+                    <span><span class="kb-key">B</span> modrá</span>
+                    <span><span class="kb-key">Y</span> žltá</span>
+                    <span><span class="kb-key">P</span> fialová</span>
+                    <span><span class="kb-key">O</span> oranžová</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <div class="help-section-icon">💡</div>
+            <div>
+                <div class="help-section-name">Ďalšie funkcie</div>
+                <ul class="help-list">
+                    <li><strong>Nápoveda</strong> — zvýrazní odporúčaný ťah (tlačidlo bliká).</li>
+                    <li><strong>Náhľad ťahu</strong> — ukáže políčka, ktoré by sa zaplavili (prejdite myšou cez farbu).</li>
+                    <li><strong>Denná výzva ⚡</strong> — každý deň rovnaká plocha pre všetkých hráčov.</li>
+                    <li><strong>Farboslepý režim 👁 CB</strong> — pridá vzory na políčka pre lepšie rozlíšenie farieb.</li>
+                </ul>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -795,6 +870,23 @@ function launchConfetti() {
     }
     draw();
 }
+
+// ===================== HELP MODAL =====================
+(function () {
+    const overlay = document.getElementById('helpOverlay');
+    document.getElementById('helpBtn').addEventListener('click', () => {
+        overlay.style.display = 'flex';
+    });
+    document.getElementById('helpClose').addEventListener('click', () => {
+        overlay.style.display = 'none';
+    });
+    overlay.addEventListener('click', e => {
+        if (e.target === overlay) overlay.style.display = 'none';
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && overlay.style.display === 'flex') overlay.style.display = 'none';
+    });
+})();
 
 // ===================== COLORBLIND MODE =====================
 let colorblindOn = localStorage.getItem('colorblindMode') === 'on';
